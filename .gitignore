@@ -1,1 +1,3 @@
-gitea-mirror/
+gitea-mirror/*
+
+.idea/
