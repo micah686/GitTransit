@@ -9,6 +9,7 @@ import { ConnectionRepository, type SafeConnection } from '../persistence/reposi
 import { ManualRouteRepository } from '../persistence/repositories/manual-routes';
 import { database } from '../persistence/database';
 import { CredentialEncryptionService, loadEncryptionKey } from '../crypto/credentials';
+import { decodeCredentialEnvelope } from './connection-service';
 
 export interface ManualRouteValues {
 	name: string;
@@ -68,12 +69,17 @@ export class ManualRouteService {
 
 	#endpoint(actorId: string, connection: SafeConnection, url: URL): AuthenticatedEndpoint {
 		const encrypted = this.connections.readEncryptedCredential(actorId, connection.id);
+		const decrypted = encrypted
+			? decodeCredentialEnvelope(
+					this.encryption().decrypt(encrypted.encrypted, actorId, encrypted.id)
+				)
+			: null;
 		const credential =
-			encrypted && ['http:', 'https:'].includes(url.protocol)
+			encrypted && decrypted && ['http:', 'https:'].includes(url.protocol)
 				? {
 						kind: 'https' as const,
-						username: 'git',
-						password: this.encryption().decrypt(encrypted.encrypted, actorId, encrypted.id)
+						username: decrypted.username ?? 'git',
+						password: decrypted.secret
 					}
 				: undefined;
 		return {

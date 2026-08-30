@@ -9,6 +9,8 @@ import { executeOneWay } from '../git/one-way';
 import { CredentialEncryptionService, loadEncryptionKey } from '../crypto/credentials';
 import { entityId, type ContentPolicy, type SafetyPolicy } from '../domain/types';
 import type { AuthenticatedEndpoint } from '../git/types';
+import { decodeCredentialEnvelope } from '../application/connection-service';
+import { DiscoveryService } from '../application/discovery-service';
 
 export type StepHandler = (
 	claim: StepClaim,
@@ -75,6 +77,14 @@ export function phaseThreeHandlers(db: SqliteDatabase): StepHandlerRegistry {
 		workspaceRoot: path.join(config.dataDir, 'work'),
 		artifactRoot: path.join(config.dataDir, 'backups')
 	});
+	const discovery = new DiscoveryService(db, () => encryption);
+	registry.register('discover-provider', async (claim, signal) => {
+		if (signal.aborted) throw signal.reason;
+		const connectionId = claim.checkpoint.connectionId;
+		if (typeof connectionId !== 'string') throw new Error('Discovery step lacks a connection ID.');
+		const result = await discovery.refresh(claim.ownerId, connectionId, signal);
+		return { connectionId, ...result };
+	});
 	registry.register('sync-one-way', async (claim, signal) => {
 		if (signal.aborted) throw signal.reason;
 		if (!claim.routeId) throw new Error('A sync step requires a route.');
@@ -102,12 +112,18 @@ export function phaseThreeHandlers(db: SqliteDatabase): StepHandlerRegistry {
 			encrypted: string | null
 		): AuthenticatedEndpoint => {
 			const endpointUrl = new URL(url);
+			const decrypted =
+				credentialId && encrypted
+					? decodeCredentialEnvelope(
+							encryption.decrypt(JSON.parse(encrypted), claim.ownerId, credentialId)
+						)
+					: null;
 			const credential =
-				credentialId && encrypted && ['http:', 'https:'].includes(endpointUrl.protocol)
+				credentialId && decrypted && ['http:', 'https:'].includes(endpointUrl.protocol)
 					? {
 							kind: 'https' as const,
-							username: 'git',
-							password: encryption.decrypt(JSON.parse(encrypted), claim.ownerId, credentialId)
+							username: decrypted.username ?? 'git',
+							password: decrypted.secret
 						}
 					: undefined;
 			return {

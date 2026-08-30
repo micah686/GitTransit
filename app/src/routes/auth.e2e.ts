@@ -12,7 +12,12 @@ test('first admin setup closes and the dashboard is responsive', async ({ page }
 	await expect(page.getByRole('heading', { name: 'Good to see you' })).toBeVisible();
 	await page.getByRole('link', { name: 'Connections' }).click();
 	await page.getByRole('link', { name: 'Add connection' }).click();
-	await page.getByLabel('Name').fill('Test Forge');
+	const provider = page.getByLabel('Provider adapter');
+	await expect(provider.locator('option')).toHaveCount(7);
+	await provider.selectOption('bitbucket-cloud');
+	await expect(page.getByLabel('Username (basic/app password)')).toBeVisible();
+	await provider.selectOption('fake');
+	await page.getByLabel('Name', { exact: true }).fill('Test Forge');
 	await page.getByLabel('Base URL').fill('https://forge.example.test');
 	await page.locator('input[name="credential"]').fill('browser-secret-token');
 	await page.getByRole('button', { name: 'Test and create' }).click();

@@ -38,7 +38,19 @@ export class GenericGitProviderAdapter implements ProviderAdapter {
 			externalId: input.externalId,
 			displayPath,
 			normalizedPath: displayPath.toLowerCase(),
-			cloneUrl
+			cloneUrl,
+			pushUrl: new URL(input.pushUrl ?? input.cloneUrl),
+			webUrl: input.webUrl ? new URL(input.webUrl) : null,
+			namespaceExternalId: input.namespaceExternalId ?? null,
+			defaultBranch: input.defaultBranch ?? null,
+			visibility: input.visibility ?? null,
+			archived: input.archived ?? false,
+			disabled: input.disabled ?? false,
+			fork: input.fork ?? false,
+			hasIssues: input.hasIssues ?? null,
+			hasWiki: input.hasWiki ?? null,
+			hasLfs: input.hasLfs ?? null,
+			providerMetadata: input.providerMetadata ?? {}
 		};
 	}
 }

@@ -9,8 +9,10 @@ export interface SafeConnection {
 	name: string;
 	providerId: AdapterId;
 	baseUrl: string;
+	apiUrl: string | null;
 	enabled: boolean;
 	credentialConfigured: boolean;
+	credentialKind: 'token' | 'basic' | 'app-password' | 'ssh-key' | null;
 	credentialHint: string | null;
 	product: string | null;
 	productVersion: string | null;
@@ -25,6 +27,7 @@ export interface NewConnection {
 	name: string;
 	providerId: AdapterId;
 	baseUrl: string;
+	apiUrl?: string;
 	credential?: {
 		id: string;
 		kind: 'token' | 'basic' | 'app-password' | 'ssh-key';
@@ -40,9 +43,11 @@ interface ConnectionRow {
 	name: string;
 	provider_id: AdapterId;
 	base_url: string;
+	api_url: string | null;
 	enabled: number;
 	credential_id: string | null;
 	display_hint: string | null;
+	credential_kind: 'token' | 'basic' | 'app-password' | 'ssh-key' | null;
 	product: string | null;
 	product_version: string | null;
 	capabilities_json: string;
@@ -51,9 +56,9 @@ interface ConnectionRow {
 	version: number;
 }
 
-const selectSafe = `SELECT c.id, c.name, c.provider_id, c.base_url, c.enabled, c.credential_id,
+const selectSafe = `SELECT c.id, c.name, c.provider_id, c.base_url, c.api_url, c.enabled, c.credential_id,
  c.product, c.product_version, c.capabilities_json, c.last_test_at, c.last_test_status, c.version,
- cr.display_hint
+ cr.display_hint, cr.kind credential_kind
  FROM connections c LEFT JOIN credentials cr ON cr.id = c.credential_id AND cr.user_id = c.user_id`;
 
 function toSafe(row: ConnectionRow): SafeConnection {
@@ -62,8 +67,10 @@ function toSafe(row: ConnectionRow): SafeConnection {
 		name: row.name,
 		providerId: row.provider_id,
 		baseUrl: row.base_url,
+		apiUrl: row.api_url,
 		enabled: row.enabled === 1,
 		credentialConfigured: row.credential_id !== null,
+		credentialKind: row.credential_kind,
 		credentialHint: row.display_hint,
 		product: row.product,
 		productVersion: row.product_version,
@@ -118,9 +125,9 @@ export class ConnectionRepository {
 			this.db
 				.prepare(
 					`INSERT INTO connections
-			 (id,user_id,name,normalized_name,provider_id,base_url,credential_id,product,product_version,
-			 capabilities_json,capabilities_observed_at,last_test_at,last_test_status,created_at,updated_at)
-			 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+				 (id,user_id,name,normalized_name,provider_id,base_url,api_url,credential_id,product,product_version,
+				 capabilities_json,capabilities_observed_at,last_test_at,last_test_status,created_at,updated_at)
+				 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
 				)
 				.run(
 					id,
@@ -129,6 +136,7 @@ export class ConnectionRepository {
 					input.name.trim().toLowerCase(),
 					input.providerId,
 					input.baseUrl,
+					input.apiUrl ?? null,
 					credentialId,
 					input.probe.product,
 					input.probe.version,
@@ -149,17 +157,20 @@ export class ConnectionRepository {
 		ownerId: string,
 		id: string,
 		version: number,
-		fields: { name: string; baseUrl: string; enabled: boolean }
+		fields: { name: string; baseUrl: string; apiUrl?: string | null; enabled: boolean }
 	): boolean {
 		const result = this.db
 			.prepare(
-				`UPDATE connections SET name=?, normalized_name=?, base_url=?, enabled=?,
+				`UPDATE connections SET name=?, normalized_name=?, base_url=?,
+				 api_url=CASE WHEN ?=1 THEN ? ELSE api_url END, enabled=?,
 		 version=version+1, updated_at=? WHERE id=? AND user_id=? AND version=?`
 			)
 			.run(
 				fields.name.trim(),
 				fields.name.trim().toLowerCase(),
 				fields.baseUrl,
+				Object.hasOwn(fields, 'apiUrl') ? 1 : 0,
+				fields.apiUrl ?? null,
 				fields.enabled ? 1 : 0,
 				Date.now(),
 				id,
@@ -227,16 +238,30 @@ export class ConnectionRepository {
 	readEncryptedCredential(
 		ownerId: string,
 		connectionId: string
-	): { id: string; encrypted: EncryptedSecret } | null {
+	): {
+		id: string;
+		kind: 'token' | 'basic' | 'app-password' | 'ssh-key';
+		encrypted: EncryptedSecret;
+	} | null {
 		const row = this.db
 			.prepare(
-				`SELECT cr.id, cr.encrypted_payload FROM connections c
+				`SELECT cr.id, cr.kind, cr.encrypted_payload FROM connections c
 		 JOIN credentials cr ON cr.id=c.credential_id AND cr.user_id=c.user_id
 		 WHERE c.id=? AND c.user_id=?`
 			)
-			.get(connectionId, ownerId) as { id: string; encrypted_payload: string } | undefined;
+			.get(connectionId, ownerId) as
+			| {
+					id: string;
+					kind: 'token' | 'basic' | 'app-password' | 'ssh-key';
+					encrypted_payload: string;
+			  }
+			| undefined;
 		return row
-			? { id: row.id, encrypted: JSON.parse(row.encrypted_payload) as EncryptedSecret }
+			? {
+					id: row.id,
+					kind: row.kind,
+					encrypted: JSON.parse(row.encrypted_payload) as EncryptedSecret
+				}
 			: null;
 	}
 }

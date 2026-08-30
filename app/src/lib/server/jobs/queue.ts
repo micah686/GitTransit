@@ -8,6 +8,7 @@ export interface StepDefinition {
 	readonly name: string;
 	readonly routeId?: string;
 	readonly maxAttempts?: number;
+	readonly checkpoint?: Readonly<Record<string, unknown>>;
 }
 export interface StepClaim {
 	readonly stepId: string;
@@ -92,7 +93,8 @@ export class JobQueue {
 					now
 				);
 			const insertStep = this.db.prepare(`INSERT INTO run_steps
-			 (id,run_id,route_id,step_order,name,max_attempts,state,next_attempt_at) VALUES (?,?,?,?,?,?,'queued',?)`);
+			 (id,run_id,route_id,step_order,name,max_attempts,state,next_attempt_at,checkpoint_json)
+			 VALUES (?,?,?,?,?,?,'queued',?,?)`);
 			input.steps.forEach((step, index) =>
 				insertStep.run(
 					randomUUID(),
@@ -101,7 +103,8 @@ export class JobQueue {
 					index,
 					step.name,
 					step.maxAttempts ?? 3,
-					now
+					now,
+					JSON.stringify(step.checkpoint ?? {})
 				)
 			);
 			appendEvent(

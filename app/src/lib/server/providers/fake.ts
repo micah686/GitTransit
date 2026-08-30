@@ -38,7 +38,16 @@ export class FakeProviderAdapter implements ProviderAdapter {
 		})
 	};
 	readonly repositories = {
-		createEmpty: async (_context: AdapterContext, path: string) => ({ id: `fake:${path}`, path })
+		find: async (_context: AdapterContext, path: string) => ({
+			externalId: `fake:${path}`,
+			fullPath: path,
+			cloneUrl: `https://fake.invalid/${path}.git`
+		}),
+		createEmpty: async (_context: AdapterContext, path: string) => ({
+			externalId: `fake:${path}`,
+			fullPath: path,
+			cloneUrl: `https://fake.invalid/${path}.git`
+		})
 	};
 
 	async testConnection(context: AdapterContext): Promise<ConnectionProbe> {
@@ -59,7 +68,19 @@ export class FakeProviderAdapter implements ProviderAdapter {
 			externalId: input.externalId,
 			displayPath,
 			normalizedPath: displayPath.toLowerCase(),
-			cloneUrl
+			cloneUrl,
+			pushUrl: new URL(input.pushUrl ?? input.cloneUrl),
+			webUrl: input.webUrl ? new URL(input.webUrl) : null,
+			namespaceExternalId: input.namespaceExternalId ?? null,
+			defaultBranch: input.defaultBranch ?? null,
+			visibility: input.visibility ?? null,
+			archived: input.archived ?? false,
+			disabled: input.disabled ?? false,
+			fork: input.fork ?? false,
+			hasIssues: input.hasIssues ?? null,
+			hasWiki: input.hasWiki ?? null,
+			hasLfs: input.hasLfs ?? null,
+			providerMetadata: input.providerMetadata ?? {}
 		};
 	}
 }
