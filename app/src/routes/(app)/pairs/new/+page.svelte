@@ -110,6 +110,8 @@
 				><span>Rewrite safety</span><select class="select-bordered select" name="safety"
 					><option value="fast-forward-only">Fast-forward only</option><option
 						value="backup-and-apply">Backup and apply</option
+					><option value="approve-destructive">Require approval and backup</option><option
+						value="never-delete">Never apply destructive changes</option
 					></select
 				></label
 			><label class="form-field checkbox-field"

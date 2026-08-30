@@ -4,6 +4,7 @@ import { database } from '../persistence/database';
 import { JobQueue } from '../jobs/queue';
 import type { SchedulePolicy } from '../domain/types';
 import { nextSchedule } from './pair-service';
+import { LeaseRepository } from '../persistence/repositories/leases';
 
 interface RunnableRoute {
 	id: string;
@@ -86,7 +87,14 @@ export class PairRunService {
 		);
 	}
 
-	enqueueDue(now = Date.now()): number {
+	enqueueDue(now = Date.now(), schedulerId = 'scheduler-default'): number {
+		const leadership = new LeaseRepository(this.db).acquire(
+			'scheduler',
+			'global',
+			schedulerId,
+			60_000
+		);
+		if (!leadership) return 0;
 		const due = this.db
 			.prepare(
 				`SELECT id,user_id,schedule_policy_json FROM mirror_pairs p WHERE state='enabled' AND next_run_at<=? AND NOT EXISTS (SELECT 1 FROM runs r WHERE r.pair_id=p.id AND r.state IN ('queued','running')) ORDER BY next_run_at LIMIT 20`

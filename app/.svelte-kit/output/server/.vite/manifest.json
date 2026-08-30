@@ -21,6 +21,14 @@
       "_credentials.js"
     ]
   },
+  "_approvals.js": {
+    "file": "chunks/approvals.js",
+    "name": "approvals",
+    "imports": [
+      "_database.js",
+      "_store.js"
+    ]
+  },
   "_auth.js": {
     "file": "chunks/auth.js",
     "name": "auth",
@@ -88,6 +96,13 @@
   "_inventory-service.js": {
     "file": "chunks/inventory-service.js",
     "name": "inventory-service",
+    "imports": [
+      "_database.js"
+    ]
+  },
+  "_maintenance.js": {
+    "file": "chunks/maintenance.js",
+    "name": "maintenance",
     "imports": [
       "_database.js"
     ]
@@ -239,6 +254,24 @@
     "imports": [
       "_server.js",
       "_paths.js"
+    ]
+  },
+  "src/routes/(app)/approvals/+page.server.ts": {
+    "file": "entries/pages/(app)/approvals/_page.server.ts.js",
+    "name": "entries/pages/(app)/approvals/_page.server.ts",
+    "src": "src/routes/(app)/approvals/+page.server.ts",
+    "isEntry": true,
+    "imports": [
+      "_approvals.js"
+    ]
+  },
+  "src/routes/(app)/approvals/+page.svelte": {
+    "file": "entries/pages/(app)/approvals/_page.svelte.js",
+    "name": "entries/pages/(app)/approvals/_page.svelte",
+    "src": "src/routes/(app)/approvals/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_server.js"
     ]
   },
   "src/routes/(app)/conflicts/+page.svelte": {
@@ -450,6 +483,24 @@
       "_server.js"
     ]
   },
+  "src/routes/(app)/settings/maintenance/+page.server.ts": {
+    "file": "entries/pages/(app)/settings/maintenance/_page.server.ts.js",
+    "name": "entries/pages/(app)/settings/maintenance/_page.server.ts",
+    "src": "src/routes/(app)/settings/maintenance/+page.server.ts",
+    "isEntry": true,
+    "imports": [
+      "_maintenance.js"
+    ]
+  },
+  "src/routes/(app)/settings/maintenance/+page.svelte": {
+    "file": "entries/pages/(app)/settings/maintenance/_page.svelte.js",
+    "name": "entries/pages/(app)/settings/maintenance/_page.svelte",
+    "src": "src/routes/(app)/settings/maintenance/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_server.js"
+    ]
+  },
   "src/routes/(public)/+layout.svelte": {
     "file": "entries/pages/(public)/_layout.svelte.js",
     "name": "entries/pages/(public)/_layout.svelte",
@@ -515,7 +566,16 @@
       "_server.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.Cd3z6I08.css"
+      "_app/immutable/assets/_layout.DjxSn98d.css"
+    ]
+  },
+  "src/routes/api/v1/approvals/[id]/+server.ts": {
+    "file": "entries/endpoints/api/v1/approvals/_id_/_server.ts.js",
+    "name": "entries/endpoints/api/v1/approvals/_id_/_server.ts",
+    "src": "src/routes/api/v1/approvals/[id]/+server.ts",
+    "isEntry": true,
+    "imports": [
+      "_approvals.js"
     ]
   },
   "src/routes/api/v1/events/+server.ts": {
@@ -535,6 +595,24 @@
     "isEntry": true,
     "imports": [
       "__server.js"
+    ]
+  },
+  "src/routes/api/v1/maintenance/cleanup/+server.ts": {
+    "file": "entries/endpoints/api/v1/maintenance/cleanup/_server.ts.js",
+    "name": "entries/endpoints/api/v1/maintenance/cleanup/_server.ts",
+    "src": "src/routes/api/v1/maintenance/cleanup/+server.ts",
+    "isEntry": true,
+    "imports": [
+      "_maintenance.js"
+    ]
+  },
+  "src/routes/api/v1/metrics/+server.ts": {
+    "file": "entries/endpoints/api/v1/metrics/_server.ts.js",
+    "name": "entries/endpoints/api/v1/metrics/_server.ts",
+    "src": "src/routes/api/v1/metrics/+server.ts",
+    "isEntry": true,
+    "imports": [
+      "_database.js"
     ]
   },
   "src/routes/api/v1/ready/+server.ts": {

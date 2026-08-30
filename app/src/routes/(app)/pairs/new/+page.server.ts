@@ -76,7 +76,10 @@ function validate(value: PairValues): void {
 		value.schedule.batchSize > 500 ||
 		value.schedule.routeConcurrency < 1 ||
 		value.schedule.routeConcurrency > 20 ||
-		!['block', 'suffix'].includes(value.collisionStrategy)
+		!['block', 'suffix'].includes(value.collisionStrategy) ||
+		!['fast-forward-only', 'backup-and-apply', 'approve-destructive', 'never-delete'].includes(
+			value.safety.strategy
+		)
 	)
 		throw new Error('Choose valid pair and scheduling options.');
 }

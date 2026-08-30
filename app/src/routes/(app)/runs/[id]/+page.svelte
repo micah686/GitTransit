@@ -21,3 +21,15 @@
 			<hr />
 		</li>{/each}
 </ol>
+{#if data.artifacts.length}<section class="route-list">
+		<h2>Verified backup artifacts</h2>
+		{#each data.artifacts as artifact (artifact.id)}<article>
+				<div>
+					<strong>Side {artifact.protectedSide} bundle</strong><small>{artifact.relativePath}</small
+					>
+				</div>
+				<code>{artifact.digest}</code><span>{Math.ceil(artifact.byteSize / 1024)} KiB</span><span
+					class="badge badge-success">{artifact.verificationStatus}</span
+				>
+			</article>{/each}
+	</section>{/if}

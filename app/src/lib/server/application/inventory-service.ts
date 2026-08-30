@@ -54,6 +54,17 @@ export interface RunStepItem {
 export interface RunDetail {
 	run: { id: string; kind: string; trigger: string; state: string };
 	steps: readonly RunStepItem[];
+	artifacts: readonly {
+		id: string;
+		routeId: string;
+		protectedSide: string;
+		relativePath: string;
+		byteSize: number;
+		digest: string;
+		verificationStatus: string;
+		createdAt: number;
+		expiresAt: number | null;
+	}[];
 }
 export class InventoryService {
 	constructor(private readonly db: SqliteDatabase) {}
@@ -107,7 +118,12 @@ export class InventoryService {
 				'SELECT id,name,attempt,max_attempts maxAttempts,state,checkpoint_json checkpoint,safe_error_code errorCode,started_at startedAt,completed_at completedAt FROM run_steps WHERE run_id=? ORDER BY step_order'
 			)
 			.all(id) as RunStepItem[];
-		return { run, steps };
+		const artifacts = this.db
+			.prepare(
+				`SELECT id,route_id routeId,protected_side protectedSide,relative_path relativePath,byte_size byteSize,digest,verification_status verificationStatus,created_at createdAt,expires_at expiresAt FROM backup_artifacts WHERE run_id=? AND user_id=? ORDER BY created_at DESC`
+			)
+			.all(id, ownerId) as RunDetail['artifacts'];
+		return { run, steps, artifacts };
 	}
 }
 let instance: InventoryService | undefined;

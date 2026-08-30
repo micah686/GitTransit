@@ -134,6 +134,106 @@ describe('controlled Git transport', () => {
 		}
 	}, 20_000);
 
+	it('applies only an unchanged approved destructive plan and always creates its backup first', async () => {
+		const f = await fixture();
+		try {
+			await git(f.work, 'push', f.b, 'refs/heads/main:refs/heads/main');
+			await git(f.work, 'checkout', '--orphan', 'approved-replacement');
+			await import('node:fs/promises').then(({ writeFile }) =>
+				writeFile(join(f.work, 'file.txt'), 'approved')
+			);
+			await git(f.work, 'add', 'file.txt');
+			await git(f.work, 'commit', '-m', 'approved');
+			await git(f.work, 'push', '--force', f.a, 'HEAD:refs/heads/main');
+			const transport = new ControlledGitTransport({
+				workspaceRoot: join(f.root, 'workspace'),
+				artifactRoot: join(f.root, 'artifacts')
+			});
+			const endpoint = (value: string) => ({
+				url: pathToFileURL(value),
+				credentialId: null,
+				stableIdentity: value
+			});
+			const request = {
+				routeId: entityId('route-approval'),
+				runId: 'approval-plan',
+				endpointA: endpoint(f.a),
+				endpointB: endpoint(f.b),
+				refs: { includes: [], excludes: [], targetOnly: 'preserve' as const },
+				safety: { strategy: 'approve-destructive' as const, requireBackup: true },
+				lfs: 'off' as const,
+				capabilityGeneration: 1,
+				policyGeneration: 1,
+				assertLeaseCurrent: () => true
+			};
+			const pending = await executeOneWay(transport, request);
+			expect(pending.state).toBe('awaiting-approval');
+			const applied = await executeOneWay(transport, {
+				...request,
+				runId: 'approval-apply',
+				approvedPlan: pending.plan
+			});
+			expect(applied.state).toBe('succeeded');
+			if (applied.state === 'succeeded')
+				expect(applied.artifact?.digest).toMatch(/^[0-9a-f]{64}$/u);
+			expect(await git(f.root, '--git-dir', f.b, 'rev-parse', 'refs/heads/main')).toBe(
+				await git(f.root, '--git-dir', f.a, 'rev-parse', 'refs/heads/main')
+			);
+		} finally {
+			await rm(f.root, { recursive: true, force: true });
+		}
+	}, 20_000);
+
+	it('invalidates approval when a destination OID changes', async () => {
+		const f = await fixture();
+		try {
+			await git(f.work, 'push', f.b, 'refs/heads/main:refs/heads/main');
+			await git(f.work, 'checkout', '--orphan', 'source-rewrite');
+			await import('node:fs/promises').then(({ writeFile }) =>
+				writeFile(join(f.work, 'file.txt'), 'source')
+			);
+			await git(f.work, 'add', 'file.txt');
+			await git(f.work, 'commit', '-m', 'source');
+			await git(f.work, 'push', '--force', f.a, 'HEAD:refs/heads/main');
+			const transport = new ControlledGitTransport({
+				workspaceRoot: join(f.root, 'workspace'),
+				artifactRoot: join(f.root, 'artifacts')
+			});
+			const endpoint = (value: string) => ({
+				url: pathToFileURL(value),
+				credentialId: null,
+				stableIdentity: value
+			});
+			const request = {
+				routeId: entityId('route-stale-approval'),
+				runId: 'stale-plan',
+				endpointA: endpoint(f.a),
+				endpointB: endpoint(f.b),
+				refs: { includes: [], excludes: [], targetOnly: 'preserve' as const },
+				safety: { strategy: 'approve-destructive' as const, requireBackup: true },
+				lfs: 'off' as const,
+				capabilityGeneration: 1,
+				policyGeneration: 1,
+				assertLeaseCurrent: () => true
+			};
+			const pending = await executeOneWay(transport, request);
+			await git(f.work, 'checkout', '--orphan', 'target-change');
+			await import('node:fs/promises').then(({ writeFile }) =>
+				writeFile(join(f.work, 'file.txt'), 'target')
+			);
+			await git(f.work, 'add', 'file.txt');
+			await git(f.work, 'commit', '-m', 'target');
+			await git(f.work, 'push', '--force', f.b, 'HEAD:refs/heads/main');
+			const changed = await git(f.root, '--git-dir', f.b, 'rev-parse', 'refs/heads/main');
+			await expect(
+				executeOneWay(transport, { ...request, runId: 'stale-apply', approvedPlan: pending.plan })
+			).rejects.toThrow('APPROVED_PLAN_STALE');
+			expect(await git(f.root, '--git-dir', f.b, 'rev-parse', 'refs/heads/main')).toBe(changed);
+		} finally {
+			await rm(f.root, { recursive: true, force: true });
+		}
+	}, 20_000);
+
 	it('reports whether the optional Git LFS binary is available', async () => {
 		const root = await mkdtemp(join(tmpdir(), 'gittransit-lfs-'));
 		try {

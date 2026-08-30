@@ -70,6 +70,12 @@
 			<a href={resolve('/conflicts')} onclick={() => (menuOpen = false)}
 				><span aria-hidden="true">△</span>Conflicts</a
 			>
+			<a href={resolve('/approvals')} onclick={() => (menuOpen = false)}
+				><span aria-hidden="true">✓</span>Approvals</a
+			>
+			<a href={resolve('/settings/maintenance')} onclick={() => (menuOpen = false)}
+				><span aria-hidden="true">⚙</span>Maintenance</a
+			>
 		</nav>
 		<div class="sidebar-footer">
 			<div class="preference-grid">

@@ -16,6 +16,7 @@ describe('named provider discovery', () => {
 			"INSERT INTO users(id,email,password_hash,role,created_at) VALUES ('owner-a','a@x.test','x','member',0),('owner-b','b@x.test','x','member',0)"
 		).run();
 		const encryption = new CredentialEncryptionService(Buffer.alloc(32, 5));
+		let failSecondPage = false;
 		const credentialId = 'credential-1';
 		const repository = new ConnectionRepository(db);
 		const connection = repository.create({
@@ -54,17 +55,20 @@ describe('named provider discovery', () => {
 							],
 					nextCursor: cursor ? null : '2'
 				}),
-				listRepositories: async (_context, cursor) => ({
-					items: [
-						{
-							externalId: cursor ? 'repo-2' : 'repo-1',
-							fullPath: cursor ? 'Team/Sub/Second' : 'Team/Sub/First',
-							cloneUrl: `https://gitea.test/Team/Sub/${cursor ? 'Second' : 'First'}.git`,
-							namespaceExternalId: 'namespace-1'
-						}
-					],
-					nextCursor: cursor ? null : '2'
-				})
+				listRepositories: async (_context, cursor) => {
+					if (cursor && failSecondPage) throw new Error('incomplete scan');
+					return {
+						items: [
+							{
+								externalId: cursor ? 'repo-2' : 'repo-1',
+								fullPath: cursor ? 'Team/Sub/Second' : 'Team/Sub/First',
+								cloneUrl: `https://gitea.test/Team/Sub/${cursor ? 'Second' : 'First'}.git`,
+								namespaceExternalId: 'namespace-1'
+							}
+						],
+						nextCursor: cursor ? null : '2'
+					};
+				}
 			},
 			normalize: normalizeRepository
 		};
@@ -80,6 +84,16 @@ describe('named provider discovery', () => {
 			'Team/Sub/Second'
 		]);
 		expect(service.list('owner-b', connection.id)).toEqual([]);
+		failSecondPage = true;
+		await expect(service.refresh('owner-a', connection.id)).rejects.toThrow('incomplete scan');
+		expect(
+			db
+				.prepare(
+					"SELECT COUNT(*) count FROM remote_repositories WHERE connection_id=? AND discovery_state='observed'"
+				)
+				.get(connection.id)
+		).toEqual({ count: 2 });
+		failSecondPage = false;
 		await service.refresh('owner-a', connection.id);
 		expect(service.list('owner-a', connection.id)).toHaveLength(2);
 	});

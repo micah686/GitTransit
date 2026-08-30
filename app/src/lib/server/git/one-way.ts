@@ -22,6 +22,8 @@ export interface OneWayRequest {
 	readonly policyGeneration: number;
 	/** Called immediately before every remote mutation to enforce the durable fencing token. */
 	readonly assertLeaseCurrent: () => Promise<boolean> | boolean;
+	/** Exact operator-approved plan. Execution still re-observes and must match it byte-for-byte. */
+	readonly approvedPlan?: ImmutableRefPlan;
 }
 
 export type OneWayResult =
@@ -42,6 +44,23 @@ function relevantPatterns(policy: ManagedRefPolicy): readonly string[] {
 function excluded(action: RefAction, excludes: readonly string[]): boolean {
 	return excludes.some((pattern) =>
 		pattern.endsWith('*') ? action.ref.startsWith(pattern.slice(0, -1)) : action.ref === pattern
+	);
+}
+
+function plansMatch(left: ImmutableRefPlan, right: ImmutableRefPlan): boolean {
+	const entries = (values: ReadonlyMap<string, string>) =>
+		[...values].sort(([a], [b]) => a.localeCompare(b));
+	return (
+		JSON.stringify({
+			...left,
+			expectedA: entries(left.expectedA),
+			expectedB: entries(left.expectedB)
+		}) ===
+		JSON.stringify({
+			...right,
+			expectedA: entries(right.expectedA),
+			expectedB: entries(right.expectedB)
+		})
 	);
 }
 
@@ -75,8 +94,10 @@ export async function executeOneWay(
 			return { state: 'conflicted', plan };
 		if (decisions.some((decision) => decision.disposition === 'block'))
 			return { state: 'blocked', plan };
-		if (decisions.some((decision) => decision.disposition === 'await-approval'))
-			return { state: 'awaiting-approval', plan };
+		if (decisions.some((decision) => decision.disposition === 'await-approval')) {
+			if (!request.approvedPlan) return { state: 'awaiting-approval', plan };
+			if (!plansMatch(plan, request.approvedPlan)) throw new Error('APPROVED_PLAN_STALE');
+		}
 
 		const mutating = actions.filter(
 			(action) => action.kind !== 'noop' && action.kind !== 'conflict'

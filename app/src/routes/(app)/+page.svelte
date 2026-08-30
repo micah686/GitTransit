@@ -41,6 +41,11 @@
 				>Needs attention</small
 			>
 		</article>
+		<article class="stat-card">
+			<span>Pending approvals</span><strong>{data.counts.approvals}</strong><small
+				>Destructive plans awaiting review</small
+			>
+		</article>
 	</div>
 </section>
 <section class="next-step" aria-labelledby="next-title">

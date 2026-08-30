@@ -4,14 +4,20 @@ import { JobQueue } from '$lib/server/jobs/queue';
 import { phaseThreeHandlers } from '$lib/server/jobs/handlers';
 import { runWorker } from '$lib/server/jobs/worker';
 import { PairRunService } from '$lib/server/application/pair-run-service';
+import { RecoveryService } from '$lib/server/operations/recovery';
 
 const shutdown = new AbortController();
-process.once('SIGINT', () => shutdown.abort());
-process.once('SIGTERM', () => shutdown.abort());
-
 const scheduler = new PairRunService(database());
-const schedulerTimer = setInterval(() => scheduler.enqueueDue(), 30_000);
-scheduler.enqueueDue();
+await new RecoveryService(database()).run();
+const schedulerId = `scheduler-${randomUUID()}`;
+const schedulerTimer = setInterval(() => scheduler.enqueueDue(Date.now(), schedulerId), 30_000);
+const stop = () => {
+	clearInterval(schedulerTimer);
+	shutdown.abort();
+};
+process.once('SIGINT', stop);
+process.once('SIGTERM', stop);
+scheduler.enqueueDue(Date.now(), schedulerId);
 
 await runWorker(
 	new JobQueue(database()),

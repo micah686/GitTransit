@@ -194,6 +194,38 @@ export class JobQueue {
 		);
 	}
 
+	awaitApproval(claim: StepClaim, approvalId: string): boolean {
+		return transaction(this.db, () => {
+			const now = databaseNow(this.db);
+			const updated = this.db
+				.prepare(
+					`UPDATE run_steps SET state='cancelled',completed_at=?,lease_owner=NULL,lease_expires_at=NULL,safe_error_code='AWAITING_APPROVAL' WHERE id=? AND state='running' AND lease_owner=? AND fencing_token=? AND lease_expires_at>?`
+				)
+				.run(now, claim.stepId, claim.workerId, claim.fencingToken, now);
+			if (updated.changes !== 1) return false;
+			this.db
+				.prepare(
+					"UPDATE runs SET state='awaiting-approval',safe_error_code='AWAITING_APPROVAL' WHERE id=? AND user_id=?"
+				)
+				.run(claim.runId, claim.ownerId);
+			if (claim.routeId)
+				this.db
+					.prepare(
+						"UPDATE repository_routes SET status='blocked',safe_error_code='AWAITING_APPROVAL',warning_summary='A destructive ref plan requires approval.',updated_at=? WHERE id=? AND user_id=?"
+					)
+					.run(now, claim.routeId, claim.ownerId);
+			appendEvent(
+				this.db,
+				claim.ownerId,
+				'run.awaiting-approval',
+				[claim.runId, approvalId],
+				{ state: 'awaiting-approval' },
+				now
+			);
+			return true;
+		});
+	}
+
 	complete(claim: StepClaim): boolean {
 		return transaction(this.db, () => {
 			const now = databaseNow(this.db);

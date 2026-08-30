@@ -152,4 +152,26 @@ describe('two-way decision table', () => {
 		] as const;
 		for (const action of actions) expect(isDestructive(action)).toBe(true);
 	});
+
+	it('never-delete blocks every destructive write', () => {
+		const policy = { strategy: 'never-delete', requireBackup: false } as const;
+		expect(
+			assessAction(
+				{
+					kind: 'force-update',
+					ref: refName('refs/heads/main'),
+					oldOid: oid('a'),
+					newOid: oid('b'),
+					to: 'B'
+				},
+				policy
+			).disposition
+		).toBe('block');
+		expect(
+			assessAction(
+				{ kind: 'delete', ref: refName('refs/heads/old'), oldOid: oid('a'), from: 'B' },
+				policy
+			).disposition
+		).toBe('block');
+	});
 });

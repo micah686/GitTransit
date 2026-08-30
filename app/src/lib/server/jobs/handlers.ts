@@ -12,6 +12,7 @@ import type { AuthenticatedEndpoint } from '../git/types';
 import { decodeCredentialEnvelope } from '../application/connection-service';
 import { DiscoveryService } from '../application/discovery-service';
 import { PairService } from '../application/pair-service';
+import { ApprovalService } from '../safety/approvals';
 
 export type StepHandler = (
 	claim: StepClaim,
@@ -80,6 +81,7 @@ export function phaseThreeHandlers(db: SqliteDatabase): StepHandlerRegistry {
 	});
 	const discovery = new DiscoveryService(db, () => encryption);
 	const pairs = new PairService(db);
+	const approvals = new ApprovalService(db);
 	registry.register('discover-provider', async (claim, signal) => {
 		if (signal.aborted) throw signal.reason;
 		const connectionId = claim.checkpoint.connectionId;
@@ -153,20 +155,40 @@ export function phaseThreeHandlers(db: SqliteDatabase): StepHandlerRegistry {
 		};
 		const content = JSON.parse(row.content_policy_json) as ContentPolicy;
 		const safety = JSON.parse(row.safety_policy_json) as SafetyPolicy;
-		const result = await executeOneWay(transport, {
-			routeId: entityId(row.route_id),
-			runId: claim.runId,
-			endpointA: endpoint(row.a_url, row.a_identity, row.a_credential_id, row.a_encrypted),
-			endpointB: endpoint(row.b_url, row.b_identity, row.b_credential_id, row.b_encrypted),
-			refs: content.refs,
-			safety,
-			lfs: content.lfs,
-			capabilityGeneration: 1,
-			policyGeneration: row.pair_version + row.route_generation,
-			assertLeaseCurrent: () => claimIsCurrent(db, claim)
-		});
+		const approved = approvals.approvedFor(claim.ownerId, claim.runId, claim.stepId);
+		let result: Awaited<ReturnType<typeof executeOneWay>>;
+		try {
+			result = await executeOneWay(transport, {
+				routeId: entityId(row.route_id),
+				runId: claim.runId,
+				endpointA: endpoint(row.a_url, row.a_identity, row.a_credential_id, row.a_encrypted),
+				endpointB: endpoint(row.b_url, row.b_identity, row.b_credential_id, row.b_encrypted),
+				refs: content.refs,
+				safety,
+				lfs: content.lfs,
+				capabilityGeneration: 1,
+				policyGeneration: row.pair_version + row.route_generation,
+				assertLeaseCurrent: () => claimIsCurrent(db, claim),
+				...(approved ? { approvedPlan: approved.plan } : {})
+			});
+		} catch (error) {
+			if (approved && error instanceof Error && error.message === 'APPROVED_PLAN_STALE')
+				approvals.invalidate(claim.ownerId, approved.id);
+			throw error;
+		}
+		if (result.state === 'awaiting-approval') {
+			const approvalId = approvals.request(
+				claim.ownerId,
+				claim.runId,
+				claim.stepId,
+				claim.routeId,
+				result.plan
+			);
+			return { outcome: 'awaiting-approval', approvalId };
+		}
 		if (result.state !== 'succeeded')
 			throw new Error(`Sync requires operator action: ${result.state}.`);
+		if (approved) approvals.markApplied(claim.ownerId, approved.id);
 		if (!claimIsCurrent(db, claim)) throw new Error('Route lease became stale after verification.');
 		transaction(db, () => {
 			if (!claimIsCurrent(db, claim))
@@ -183,8 +205,8 @@ export function phaseThreeHandlers(db: SqliteDatabase): StepHandlerRegistry {
 			if (result.artifact)
 				db.prepare(
 					`INSERT INTO backup_artifacts
-				 (id,user_id,route_id,run_id,protected_side,relative_path,byte_size,digest,manifest_json,
-				 verification_status,created_at) VALUES (?,?,?,?, 'B',?,?,?,?, 'verified',?)`
+					 (id,user_id,route_id,run_id,protected_side,relative_path,byte_size,digest,manifest_json,
+					 verification_status,created_at,expires_at) VALUES (?,?,?,?, 'B',?,?,?,?, 'verified',?,?)`
 				).run(
 					randomUUID(),
 					claim.ownerId,
@@ -194,7 +216,8 @@ export function phaseThreeHandlers(db: SqliteDatabase): StepHandlerRegistry {
 					result.artifact.byteSize,
 					result.artifact.digest,
 					JSON.stringify({ endpoint: row.b_identity, actions: result.plan.actions }),
-					observedAt
+					observedAt,
+					observedAt + 30 * 86_400_000
 				);
 		});
 		return { state: result.state, actionCount: result.plan.actions.length };

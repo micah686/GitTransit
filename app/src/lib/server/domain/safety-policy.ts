@@ -12,10 +12,7 @@ export function assessAction(action: RefAction, policy: SafetyPolicy): SafetyDec
 	}
 	const destructive = action.kind === 'force-update' || action.kind === 'delete';
 	if (!destructive) return { disposition: 'apply', requiresBackup: false, destructive: false };
-	if (
-		policy.strategy === 'fast-forward-only' ||
-		(policy.strategy === 'never-delete' && action.kind === 'delete')
-	) {
+	if (policy.strategy === 'fast-forward-only' || policy.strategy === 'never-delete') {
 		return { disposition: 'block', requiresBackup: false, destructive: true };
 	}
 	if (policy.strategy === 'approve-destructive') {

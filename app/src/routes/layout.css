@@ -243,6 +243,25 @@ input {
 	overflow-wrap: anywhere;
 	white-space: normal;
 }
+.approval-grid {
+	display: grid;
+	gap: 1rem;
+}
+.approval-card {
+	display: grid;
+	gap: 1rem;
+	padding: 1.25rem;
+	border: 1px solid var(--gt-line);
+	border-radius: 1rem;
+	background: var(--color-base-100);
+}
+.approval-card h2,
+.approval-card p {
+	margin: 0.35rem 0;
+}
+.approval-card code {
+	overflow-wrap: anywhere;
+}
 .route-list article {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto auto;

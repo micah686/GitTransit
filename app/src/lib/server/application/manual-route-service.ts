@@ -18,7 +18,7 @@ export interface ManualRouteValues {
 	sourceUrl: string;
 	targetUrl: string;
 	targetOnly: TargetOnlyRefPolicy;
-	safety: 'fast-forward-only' | 'backup-and-apply';
+	safety: 'fast-forward-only' | 'backup-and-apply' | 'approve-destructive' | 'never-delete';
 	lfs: 'off' | 'auto' | 'on';
 	wiki: boolean;
 }

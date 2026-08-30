@@ -12,6 +12,9 @@ export const load: PageServerLoad = ({ locals }) => {
 			pairs: count('SELECT COUNT(*) AS count FROM mirror_pairs WHERE user_id=?'),
 			routes: count('SELECT COUNT(*) AS count FROM repository_routes WHERE user_id=?'),
 			conflicts: count("SELECT COUNT(*) AS count FROM conflicts WHERE user_id=? AND state='open'"),
+			approvals: count(
+				"SELECT COUNT(*) AS count FROM destructive_plans WHERE user_id=? AND state='pending'"
+			),
 			activeRuns: count(
 				"SELECT COUNT(*) AS count FROM runs WHERE user_id=? AND state IN ('queued','running')"
 			)

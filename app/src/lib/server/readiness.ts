@@ -37,8 +37,13 @@ export async function checkReadiness(): Promise<ReadinessResult> {
 			fs.accessSync(directory, fs.constants.R_OK | fs.constants.W_OK);
 		}
 		checks.dataDirectories = 'ok';
+		const capacity = fs.statfsSync(config.dataDir);
+		const freeBytes = capacity.bavail * capacity.bsize;
+		const minimum = Number(process.env.GITTRANSIT_MIN_FREE_BYTES ?? 536_870_912);
+		checks.diskPressure = freeBytes >= minimum ? 'ok' : 'failed';
 	} catch {
 		checks.dataDirectories = 'failed';
+		checks.diskPressure = 'failed';
 	}
 	try {
 		await execFileAsync(process.env.GITTRANSIT_GIT_PATH ?? 'git', ['--version'], {

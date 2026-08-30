@@ -12,14 +12,28 @@
 	"/": [
 		"src/routes/+layout.server.ts"
 	],
+	"/api/v1/approvals/[id]": [
+		"src/routes/api/v1/approvals/[id]/+server.ts"
+	],
 	"/api/v1/events": [
 		"src/routes/api/v1/events/+server.ts"
 	],
 	"/api/v1/health": [
 		"src/routes/api/v1/health/+server.ts"
 	],
+	"/api/v1/maintenance/cleanup": [
+		"src/routes/api/v1/maintenance/cleanup/+server.ts"
+	],
+	"/api/v1/metrics": [
+		"src/routes/api/v1/metrics/+server.ts"
+	],
 	"/api/v1/ready": [
 		"src/routes/api/v1/ready/+server.ts"
+	],
+	"/(app)/approvals": [
+		"src/routes/(app)/approvals/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
 	],
 	"/(app)/conflicts": [
 		"src/routes/(app)/+layout.server.ts",
@@ -85,6 +99,11 @@
 	],
 	"/(app)/runs/[id]": [
 		"src/routes/(app)/runs/[id]/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/(app)/settings/maintenance": [
+		"src/routes/(app)/settings/maintenance/+page.server.ts",
 		"src/routes/(app)/+layout.server.ts",
 		"src/routes/+layout.server.ts"
 	],

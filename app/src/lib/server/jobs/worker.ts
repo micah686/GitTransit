@@ -25,7 +25,6 @@ export async function runWorker(
 	workerId: string,
 	signal: AbortSignal
 ): Promise<void> {
-	queue.recoverExpired();
 	queue.heartbeatWorker(workerId);
 	const workerHeartbeat = setInterval(() => queue.heartbeatWorker(workerId), 10_000);
 	logger.info({ workerId }, 'worker started');
@@ -40,9 +39,16 @@ export async function runWorker(
 		}, LEASE_MS / 3);
 		try {
 			const checkpoint = await handlers.get(claim.name)(claim, signal);
-			if (!queue.checkpoint(claim, checkpoint) || !queue.complete(claim)) {
+			if (!queue.checkpoint(claim, checkpoint)) {
 				logger.warn({ workerId, stepId: claim.stepId }, 'step lease became stale');
-			}
+			} else if (
+				checkpoint.outcome === 'awaiting-approval' &&
+				typeof checkpoint.approvalId === 'string'
+			) {
+				if (!queue.awaitApproval(claim, checkpoint.approvalId))
+					logger.warn({ workerId, stepId: claim.stepId }, 'approval checkpoint lease became stale');
+			} else if (!queue.complete(claim))
+				logger.warn({ workerId, stepId: claim.stepId }, 'step lease became stale');
 		} catch (error) {
 			logger.error({ workerId, stepId: claim.stepId, error }, 'step failed');
 			queue.failOrRetry(claim, 'STEP_FAILED', Math.min(60_000, 1_000 * 2 ** claim.attempt));
