@@ -48,5 +48,25 @@ export async function checkReadiness(): Promise<ReadinessResult> {
 	} catch {
 		checks.git = 'failed';
 	}
+	try {
+		const db = database();
+		const activeWork = (
+			db
+				.prepare("SELECT COUNT(*) AS count FROM runs WHERE state IN ('queued','running')")
+				.get() as {
+				count: number;
+			}
+		).count;
+		const recentWorker = (
+			db
+				.prepare(
+					'SELECT COUNT(*) AS count FROM worker_heartbeats WHERE stopped_at IS NULL AND heartbeat_at>?'
+				)
+				.get(Date.now() - 60_000) as { count: number }
+		).count;
+		checks.worker = activeWork === 0 || recentWorker > 0 ? 'ok' : 'failed';
+	} catch {
+		checks.worker = 'failed';
+	}
 	return { ready: Object.values(checks).every((value) => value === 'ok'), checks };
 }

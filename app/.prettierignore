@@ -12,6 +12,7 @@ gitea-mirror/
 /static/
 /.svelte-kit/
 /build/
+/worker-build/
 /test-results/
 /playwright-report/
 /node_modules/

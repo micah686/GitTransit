@@ -1,6 +1,6 @@
 # GitTransit
 
-GitTransit is a self-hosted control plane for discovering, mapping, and synchronizing repositories between independently configured Git services. The repository contains the Phase 0 contract foundation and Phase 1 local-authenticated web shell from [GitTransit_Plan.MD](../GitTransit_Plan.MD).
+GitTransit is a self-hosted control plane for discovering, mapping, and synchronizing repositories between independently configured Git services. The repository contains the Phase 0 contract foundation, Phase 1 local-authenticated shell, and Phase 2 durable control-plane core from [GitTransit_Plan.MD](../GitTransit_Plan.MD).
 
 ## Project scaffold
 
@@ -29,7 +29,7 @@ npm run dev
 
 On a fresh database, open `/setup` and create the first administrator. Development data defaults to `.gittransit/`. Readiness additionally requires a 32-byte, mode-`0600` key at `.gittransit/secrets/credential.key`, or a path supplied through `GITTRANSIT_ENCRYPTION_KEY_FILE`.
 
-The risk-focused spike suite is documented in [Phase 0](../docs/phase-0.md), and the runtime/security contract is documented in [Phase 1](../docs/phase-1.md). Architecture decisions live in [docs/decisions](../docs/decisions).
+The risk-focused spike suite is documented in [Phase 0](../docs/phase-0.md), the runtime/security contract in [Phase 1](../docs/phase-1.md), and durable jobs/events/providers in [Phase 2](../docs/phase-2.md). Architecture decisions live in [docs/decisions](../docs/decisions).
 
 ## Commands
 
@@ -38,6 +38,8 @@ The risk-focused spike suite is documented in [Phase 0](../docs/phase-0.md), and
 - `npm run test:unit` — unit and local integration spikes
 - `npm run test:e2e` — isolated Playwright setup/auth/responsive tests
 - `npm run build` — adapter-node production build with Rollup warnings treated as errors
+- `npm start` — run the compiled web process
+- `npm run start:worker` — run the separately compiled durable worker
 - `npm run audit` — production dependency vulnerability audit
 
 ## Runtime configuration

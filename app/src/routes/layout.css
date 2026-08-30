@@ -356,6 +356,108 @@ input {
 	border: 1px solid var(--gt-line);
 	border-radius: 0.85rem;
 }
+.empty-state,
+.form-panel {
+	padding: clamp(1.25rem, 4vw, 2rem);
+	background: var(--color-base-100);
+	border: 1px solid var(--gt-line);
+	border-radius: 1rem;
+}
+.empty-state {
+	display: grid;
+	justify-items: start;
+	gap: 0.65rem;
+}
+.empty-state h2,
+.empty-state p {
+	margin: 0;
+}
+.form-panel {
+	max-width: 46rem;
+}
+.form-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	padding-top: 0.5rem;
+}
+.toggle-row {
+	display: flex;
+	min-height: 44px;
+	align-items: center;
+	justify-content: space-between;
+	font-weight: 650;
+}
+.connection-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+	gap: 1rem;
+}
+.connection-card {
+	display: grid;
+	gap: 1rem;
+	padding: 1.15rem;
+	background: var(--color-base-100);
+	border: 1px solid var(--gt-line);
+	border-radius: 0.9rem;
+}
+.connection-card-heading {
+	display: flex;
+	align-items: start;
+	justify-content: space-between;
+	gap: 1rem;
+}
+.connection-card h2 {
+	margin: 0.2rem 0 0;
+	font-size: 1.1rem;
+	font-weight: 800;
+}
+.provider-label {
+	color: var(--gt-accent);
+	font-size: 0.68rem;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+.connection-status {
+	padding: 0.25rem 0.5rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+	font-size: 0.7rem;
+	font-weight: 800;
+}
+.connection-status.status-ok {
+	color: var(--color-success);
+	background: color-mix(in srgb, var(--color-success) 15%, transparent);
+}
+.safe-url {
+	margin: 0;
+	overflow-wrap: anywhere;
+	color: var(--gt-muted);
+	font-family: ui-monospace, monospace;
+	font-size: 0.78rem;
+}
+.connection-card dl {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 0.5rem;
+	margin: 0;
+}
+.connection-card dl div {
+	min-width: 0;
+}
+.connection-card dt {
+	color: var(--gt-muted);
+	font-size: 0.68rem;
+}
+.connection-card dd {
+	margin: 0.15rem 0 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-size: 0.8rem;
+	font-weight: 700;
+}
 .next-step > div {
 	display: flex;
 	align-items: center;

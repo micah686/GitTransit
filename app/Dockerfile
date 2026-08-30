@@ -13,6 +13,7 @@ RUN apk add --no-cache ca-certificates git openssh-client \
     && install -d -o 10001 -g 10001 -m 0700 /data/db /data/work /data/backups /data/secrets
 WORKDIR /app
 COPY --from=build --chown=10001:10001 /app/build ./build
+COPY --from=build --chown=10001:10001 /app/worker-build ./worker-build
 COPY --from=build --chown=10001:10001 /app/node_modules ./node_modules
 COPY --from=build --chown=10001:10001 /app/package.json ./package.json
 COPY --from=build --chown=10001:10001 /app/migrations ./migrations

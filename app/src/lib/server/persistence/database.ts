@@ -6,6 +6,10 @@ import { config } from '$lib/server/config';
 export type SqliteDatabase = Database.Database;
 
 const migration = `
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  version INTEGER PRIMARY KEY,
+  applied_at INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL COLLATE NOCASE UNIQUE,
@@ -31,6 +35,36 @@ CREATE TABLE IF NOT EXISTS login_attempts (
 );
 `;
 
+function applyMigrations(database: SqliteDatabase): void {
+	const applied = database.prepare('SELECT 1 FROM schema_migrations WHERE version = ?');
+	if (!applied.get(1)) {
+		database
+			.prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (1, ?)')
+			.run(Date.now());
+	}
+	if (!applied.get(2)) {
+		const filename = path.resolve('migrations/0002_control_plane.sql');
+		const sql = fs.readFileSync(filename, 'utf8');
+		const migrate = database.transaction(() => {
+			database.exec(sql);
+			database
+				.prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (2, ?)')
+				.run(Date.now());
+		});
+		migrate.immediate();
+	}
+	if (!applied.get(3)) {
+		const sql = fs.readFileSync(path.resolve('migrations/0003_worker_heartbeats.sql'), 'utf8');
+		const migrate = database.transaction(() => {
+			database.exec(sql);
+			database
+				.prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (3, ?)')
+				.run(Date.now());
+		});
+		migrate.immediate();
+	}
+}
+
 export function openDatabase(filename = config.databasePath): SqliteDatabase {
 	if (filename !== ':memory:')
 		fs.mkdirSync(path.dirname(filename), { recursive: true, mode: 0o700 });
@@ -39,7 +73,12 @@ export function openDatabase(filename = config.databasePath): SqliteDatabase {
 	database.pragma('journal_mode = WAL');
 	database.pragma('busy_timeout = 5000');
 	database.exec(migration);
+	applyMigrations(database);
 	return database;
+}
+
+export function transaction<T>(db: SqliteDatabase, operation: () => T): T {
+	return db.transaction(operation).immediate();
 }
 
 let instance: SqliteDatabase | undefined;

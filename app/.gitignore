@@ -1,6 +1,7 @@
 node_modules/
 .svelte-kit/
 build/
+worker-build/
 test-results/
 playwright-report/
 .gittransit/

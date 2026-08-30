@@ -1,3 +1,7 @@
+<script lang="ts">
+	let { data } = $props();
+</script>
+
 <div class="page-heading">
 	<div>
 		<div class="eyebrow">Control plane</div>
@@ -15,20 +19,26 @@
 <section aria-labelledby="overview-title">
 	<div class="section-heading">
 		<h2 id="overview-title">Overview</h2>
-		<span>Empty workspace</span>
+		<span>{data.counts.activeRuns} active jobs</span>
 	</div>
 	<div class="stat-grid">
 		<article class="stat-card">
-			<span>Connections</span><strong>0</strong><small>No services configured</small>
+			<span>Connections</span><strong>{data.counts.connections}</strong><small
+				>Configured services</small
+			>
 		</article>
 		<article class="stat-card">
-			<span>Mirror pairs</span><strong>0</strong><small>No flows configured</small>
+			<span>Mirror pairs</span><strong>{data.counts.pairs}</strong><small>Configured flows</small>
 		</article>
 		<article class="stat-card">
-			<span>Repository routes</span><strong>0</strong><small>Nothing mapped yet</small>
+			<span>Repository routes</span><strong>{data.counts.routes}</strong><small
+				>Mapped repositories</small
+			>
 		</article>
 		<article class="stat-card">
-			<span>Open conflicts</span><strong>0</strong><small>Everything is quiet</small>
+			<span>Open conflicts</span><strong>{data.counts.conflicts}</strong><small
+				>Needs attention</small
+			>
 		</article>
 	</div>
 </section>

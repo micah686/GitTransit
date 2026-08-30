@@ -1,4 +1,3 @@
-import { dev } from '$app/environment';
 import path from 'node:path';
 
 export interface AppConfig {
@@ -27,7 +26,8 @@ function parseBaseUrl(value: string): URL {
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
 	const baseUrl = parseBaseUrl(env.GITTRANSIT_BASE_URL ?? 'http://localhost:5173');
-	const dataDir = path.resolve(env.GITTRANSIT_DATA_DIR ?? (dev ? '.gittransit' : '/data'));
+	const development = env.NODE_ENV !== 'production';
+	const dataDir = path.resolve(env.GITTRANSIT_DATA_DIR ?? (development ? '.gittransit' : '/data'));
 	const databaseValue =
 		env.GITTRANSIT_DATABASE_URL ?? path.join(dataDir, 'db', 'gittransit.sqlite');
 	if (/^[a-z][a-z0-9+.-]*:/i.test(databaseValue) && !databaseValue.startsWith('file:')) {

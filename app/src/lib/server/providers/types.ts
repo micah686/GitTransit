@@ -1,5 +1,7 @@
 import type { CapabilitySet, ProviderId } from '../domain/types';
 
+export type AdapterId = ProviderId | 'fake';
+
 export interface AdapterContext {
 	readonly connectionId: string;
 	readonly signal: AbortSignal;
@@ -9,6 +11,11 @@ export interface ConnectionProbe {
 	readonly product: string;
 	readonly version: string | null;
 	readonly authenticatedIdentity: string;
+}
+
+export interface InventoryPage<T> {
+	readonly items: readonly T[];
+	readonly nextCursor: string | null;
 }
 
 export interface RemoteRepositoryInput {
@@ -25,7 +32,10 @@ export interface NormalizedRepository {
 }
 
 export interface InventoryAdapter {
-	listRepositories(context: AdapterContext, cursor?: string): Promise<unknown>;
+	listRepositories(
+		context: AdapterContext,
+		cursor?: string
+	): Promise<InventoryPage<RemoteRepositoryInput>>;
 }
 
 export interface RepositoryAdminAdapter {
@@ -37,7 +47,7 @@ export interface MetadataAdapter {
 }
 
 export interface ProviderAdapter {
-	readonly id: ProviderId;
+	readonly id: AdapterId;
 	testConnection(context: AdapterContext): Promise<ConnectionProbe>;
 	discoverCapabilities(context: AdapterContext): Promise<CapabilitySet>;
 	readonly inventory?: InventoryAdapter;
@@ -47,7 +57,7 @@ export interface ProviderAdapter {
 }
 
 export class ProviderRegistry {
-	readonly #adapters = new Map<ProviderId, ProviderAdapter>();
+	readonly #adapters = new Map<AdapterId, ProviderAdapter>();
 
 	register(adapter: ProviderAdapter): void {
 		if (this.#adapters.has(adapter.id))
@@ -55,9 +65,13 @@ export class ProviderRegistry {
 		this.#adapters.set(adapter.id, adapter);
 	}
 
-	get(id: ProviderId): ProviderAdapter {
+	get(id: AdapterId): ProviderAdapter {
 		const adapter = this.#adapters.get(id);
 		if (!adapter) throw new Error(`Provider adapter is not registered: ${id}`);
 		return adapter;
+	}
+
+	list(): readonly ProviderAdapter[] {
+		return [...this.#adapters.values()];
 	}
 }

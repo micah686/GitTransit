@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
+	import { connectEventStream } from '$lib/client/event-stream';
 	let { children, data } = $props();
 	let menuOpen = $state(false);
 	let theme = $state<'system' | 'light' | 'dark'>('system');
@@ -20,6 +21,7 @@
 		}
 		const savedTime = localStorage.getItem('gittransit-time-format');
 		if (savedTime === '12' || savedTime === '24') timeFormat = savedTime;
+		return connectEventStream(() => {});
 	});
 </script>
 
