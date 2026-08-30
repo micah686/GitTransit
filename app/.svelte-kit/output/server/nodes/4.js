@@ -1,8 +1,10 @@
-
+import * as server from '../entries/pages/(app)/_page.server.ts.js';
 
 export const index = 4;
 let component_cache;
-export const component = async () => component_cache ??= (await import('../entries/pages/demo/playwright/_page.svelte.js')).default;
-export const imports = ["_app/immutable/nodes/4.DMf6gmxO.js","_app/immutable/chunks/CbTY1Hzl.js","_app/immutable/chunks/xihTtKlq.js"];
+export const component = async () => component_cache ??= (await import('../entries/pages/(app)/_page.svelte.js')).default;
+export { server };
+export const server_id = "src/routes/(app)/+page.server.ts";
+export const imports = ["_app/immutable/nodes/4.CLSnE7ek.js","_app/immutable/chunks/CwbM3z-7.js","_app/immutable/chunks/C2dhbk1N.js","_app/immutable/chunks/xihTtKlq.js"];
 export const stylesheets = [];
 export const fonts = [];

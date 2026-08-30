@@ -125,7 +125,9 @@ export class JobQueue {
 			const candidate = this.db
 				.prepare(
 					`SELECT s.id FROM run_steps s JOIN runs r ON r.id=s.run_id
-			 WHERE s.state='queued' AND s.next_attempt_at<=? AND r.cancellation_requested_at IS NULL
+				 WHERE s.state='queued' AND s.next_attempt_at<=? AND r.cancellation_requested_at IS NULL
+			 AND (r.pair_id IS NULL OR (SELECT COUNT(*) FROM run_steps busy JOIN runs busy_run ON busy_run.id=busy.run_id
+			   WHERE busy.state='running' AND busy_run.pair_id=r.pair_id) < COALESCE((SELECT json_extract(p.schedule_policy_json,'$.routeConcurrency') FROM mirror_pairs p WHERE p.id=r.pair_id),1))
 			 AND NOT EXISTS (SELECT 1 FROM run_steps prior WHERE prior.run_id=s.run_id
 			   AND prior.step_order<s.step_order AND prior.state!='succeeded')
 			 AND (s.route_id IS NULL OR NOT EXISTS (SELECT 1 FROM run_steps active

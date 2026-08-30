@@ -10,37 +10,169 @@ return {
 	assets: new Set(["robots.txt"]),
 	mimeTypes: {".txt":"text/plain"},
 	_: {
-		client: {start:"_app/immutable/entry/start.Bru05Ukm.js",app:"_app/immutable/entry/app.CetkG_zH.js",imports:["_app/immutable/entry/start.Bru05Ukm.js","_app/immutable/chunks/UBufTclJ.js","_app/immutable/chunks/CbTY1Hzl.js","_app/immutable/entry/app.CetkG_zH.js","_app/immutable/chunks/CbTY1Hzl.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.CXE-Vetv.js",app:"_app/immutable/entry/app.BDtdZjgv.js",imports:["_app/immutable/entry/start.CXE-Vetv.js","_app/immutable/chunks/C2dhbk1N.js","_app/immutable/chunks/CwbM3z-7.js","_app/immutable/entry/app.BDtdZjgv.js","_app/immutable/chunks/CwbM3z-7.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),
 			__memo(() => import('./nodes/2.js')),
 			__memo(() => import('./nodes/3.js')),
-			__memo(() => import('./nodes/4.js'))
+			__memo(() => import('./nodes/4.js')),
+			__memo(() => import('./nodes/5.js')),
+			__memo(() => import('./nodes/6.js')),
+			__memo(() => import('./nodes/7.js')),
+			__memo(() => import('./nodes/8.js')),
+			__memo(() => import('./nodes/9.js')),
+			__memo(() => import('./nodes/10.js')),
+			__memo(() => import('./nodes/11.js')),
+			__memo(() => import('./nodes/12.js')),
+			__memo(() => import('./nodes/13.js')),
+			__memo(() => import('./nodes/14.js')),
+			__memo(() => import('./nodes/15.js')),
+			__memo(() => import('./nodes/16.js')),
+			__memo(() => import('./nodes/17.js'))
 		],
 		remotes: {
 			
 		},
 		routes: [
 			{
-				id: "/",
+				id: "/(app)",
 				pattern: /^\/$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 2 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 4 },
 				endpoint: null
 			},
 			{
-				id: "/demo",
-				pattern: /^\/demo\/?$/,
+				id: "/api/v1/events",
+				pattern: /^\/api\/v1\/events\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 3 },
+				page: null,
+				endpoint: __memo(() => import('./entries/endpoints/api/v1/events/_server.ts.js'))
+			},
+			{
+				id: "/api/v1/health",
+				pattern: /^\/api\/v1\/health\/?$/,
+				params: [],
+				page: null,
+				endpoint: __memo(() => import('./entries/endpoints/api/v1/health/_server.ts.js'))
+			},
+			{
+				id: "/api/v1/ready",
+				pattern: /^\/api\/v1\/ready\/?$/,
+				params: [],
+				page: null,
+				endpoint: __memo(() => import('./entries/endpoints/api/v1/ready/_server.ts.js'))
+			},
+			{
+				id: "/(app)/conflicts",
+				pattern: /^\/conflicts\/?$/,
+				params: [],
+				page: { layouts: [0,2,], errors: [1,,], leaf: 5 },
 				endpoint: null
 			},
 			{
-				id: "/demo/playwright",
-				pattern: /^\/demo\/playwright\/?$/,
+				id: "/(app)/connections",
+				pattern: /^\/connections\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 4 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 6 },
+				endpoint: null
+			},
+			{
+				id: "/(app)/connections/new",
+				pattern: /^\/connections\/new\/?$/,
+				params: [],
+				page: { layouts: [0,2,], errors: [1,,], leaf: 8 },
+				endpoint: null
+			},
+			{
+				id: "/(app)/connections/[id]",
+				pattern: /^\/connections\/([^/]+?)\/?$/,
+				params: [{"name":"id","optional":false,"rest":false,"chained":false}],
+				page: { layouts: [0,2,], errors: [1,,], leaf: 7 },
+				endpoint: null
+			},
+			{
+				id: "/health",
+				pattern: /^\/health\/?$/,
+				params: [],
+				page: null,
+				endpoint: __memo(() => import('./entries/endpoints/health/_server.ts.js'))
+			},
+			{
+				id: "/(public)/login",
+				pattern: /^\/login\/?$/,
+				params: [],
+				page: { layouts: [0,3,], errors: [1,,], leaf: 16 },
+				endpoint: null
+			},
+			{
+				id: "/logout",
+				pattern: /^\/logout\/?$/,
+				params: [],
+				page: null,
+				endpoint: __memo(() => import('./entries/endpoints/logout/_server.ts.js'))
+			},
+			{
+				id: "/(app)/pairs",
+				pattern: /^\/pairs\/?$/,
+				params: [],
+				page: { layouts: [0,2,], errors: [1,,], leaf: 9 },
+				endpoint: null
+			},
+			{
+				id: "/(app)/pairs/new",
+				pattern: /^\/pairs\/new\/?$/,
+				params: [],
+				page: { layouts: [0,2,], errors: [1,,], leaf: 11 },
+				endpoint: null
+			},
+			{
+				id: "/(app)/pairs/[id]",
+				pattern: /^\/pairs\/([^/]+?)\/?$/,
+				params: [{"name":"id","optional":false,"rest":false,"chained":false}],
+				page: { layouts: [0,2,], errors: [1,,], leaf: 10 },
+				endpoint: null
+			},
+			{
+				id: "/ready",
+				pattern: /^\/ready\/?$/,
+				params: [],
+				page: null,
+				endpoint: __memo(() => import('./entries/endpoints/ready/_server.ts.js'))
+			},
+			{
+				id: "/(app)/repositories",
+				pattern: /^\/repositories\/?$/,
+				params: [],
+				page: { layouts: [0,2,], errors: [1,,], leaf: 12 },
+				endpoint: null
+			},
+			{
+				id: "/(app)/repositories/[id]",
+				pattern: /^\/repositories\/([^/]+?)\/?$/,
+				params: [{"name":"id","optional":false,"rest":false,"chained":false}],
+				page: { layouts: [0,2,], errors: [1,,], leaf: 13 },
+				endpoint: null
+			},
+			{
+				id: "/(app)/runs",
+				pattern: /^\/runs\/?$/,
+				params: [],
+				page: { layouts: [0,2,], errors: [1,,], leaf: 14 },
+				endpoint: null
+			},
+			{
+				id: "/(app)/runs/[id]",
+				pattern: /^\/runs\/([^/]+?)\/?$/,
+				params: [{"name":"id","optional":false,"rest":false,"chained":false}],
+				page: { layouts: [0,2,], errors: [1,,], leaf: 15 },
+				endpoint: null
+			},
+			{
+				id: "/(public)/setup",
+				pattern: /^\/setup\/?$/,
+				params: [],
+				page: { layouts: [0,3,], errors: [1,,], leaf: 17 },
 				endpoint: null
 			}
 		],

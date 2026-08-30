@@ -126,6 +126,11 @@ export class DiscoveryService {
 		adapter: ProviderAdapter
 	): void {
 		const now = Date.now();
+		this.db
+			.prepare(
+				"UPDATE remote_repositories SET discovery_state='not-observed' WHERE connection_id=? AND discovery_state='observed'"
+			)
+			.run(connectionId);
 		const namespaceIds = new Map<string, string>();
 		for (const namespace of namespaces) {
 			const normalizedPath = namespace.fullPath.toLowerCase();

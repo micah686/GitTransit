@@ -3787,6 +3787,20 @@ function attributes(attrs, css_hash, classes, styles, flags = 0) {
 	return attr_str;
 }
 /**
+* @param {any} value
+* @param {string | undefined} [hash]
+* @param {Record<string, boolean>} [directives]
+*/
+function attr_class(value, hash, directives) {
+	var result = to_class(value, hash, directives);
+	return result ? ` class="${escape_html(result, true)}"` : "";
+}
+/** @param {any} array_like_or_iterator */
+function ensure_array_like(array_like_or_iterator) {
+	if (array_like_or_iterator) return array_like_or_iterator.length !== void 0 ? array_like_or_iterator : Array.from(array_like_or_iterator);
+	return [];
+}
+/**
 * @template V
 * @param {() => V} get_value
 */
@@ -3813,4 +3827,4 @@ function derived(fn) {
 	};
 }
 //#endregion
-export { push$1 as $, effect_tracking as A, increment as B, set_active_effect as C, run as Ct, branch as D, block as E, clear_text_content as F, Batch as G, mutable_source as H, create_text as I, defer_effect as J, current_batch as K, get_first_child as L, pause_effect as M, render_effect as N, component_root as O, invoke_error_boundary as P, pop$1 as Q, get_next_sibling as R, get as S, noop as St, untrack as T, set as U, internal_set as V, source as W, component_context as X, queue_micro_task as Y, mark_as_component as Z, is_passive_event as _, EFFECT_PRESERVED as _t, get_render_context as a, experimental_async_required as at, active_effect as b, array_from as bt, lifecycle_function_unavailable as c, hydrating as ct, getContext as d, set_hydrating as dt, set_component_context as et, hasContext as f, skip_nodes as ft, escape_html as g, HYDRATION_ERROR as gt, attr as h, svelte_boundary_reset_noop as ht, get_user_code_location as i, svelte_boundary_reset_onerror as it, move_effect as j, destroy_effect as k, createContext as l, next as lt, ssr_context as m, lifecycle_double_unmount as mt, head as n, async_mode_flag as nt, hydratable_clobbering as o, hydrate_next as ot, setContext as p, hydration_mismatch as pt, flushSync as q, render as r, hydration_failed as rt, hydratable_serialization_failed as s, hydrate_node as st, derived as t, tag as tt, getAllContexts as u, set_hydrate_node as ut, readable as v, EFFECT_TRANSPARENT as vt, set_active_reaction as w, active_reaction as x, define_property as xt, writable as y, LEGACY_PROPS as yt, init_operations as z };
+export { mark_as_component as $, component_root as A, get_next_sibling as B, active_reaction as C, define_property as Ct, untrack as D, set_active_reaction as E, render_effect as F, set as G, increment as H, invoke_error_boundary as I, current_batch as J, source as K, clear_text_content as L, effect_tracking as M, move_effect as N, block as O, pause_effect as P, component_context as Q, create_text as R, active_effect as S, array_from as St, set_active_effect as T, run as Tt, internal_set as U, init_operations as V, mutable_source as W, defer_effect as X, flushSync as Y, queue_micro_task as Z, attr as _, svelte_boundary_reset_noop as _t, render as a, hydration_failed as at, readable as b, EFFECT_TRANSPARENT as bt, hydratable_clobbering as c, hydrate_next as ct, createContext as d, next as dt, pop$1 as et, getAllContexts as f, set_hydrate_node as ft, ssr_context as g, lifecycle_double_unmount as gt, setContext as h, hydration_mismatch as ht, head as i, async_mode_flag as it, destroy_effect as j, branch as k, hydratable_serialization_failed as l, hydrate_node as lt, hasContext as m, skip_nodes as mt, derived as n, set_component_context as nt, get_user_code_location as o, svelte_boundary_reset_onerror as ot, getContext as p, set_hydrating as pt, Batch as q, ensure_array_like as r, tag as rt, get_render_context as s, experimental_async_required as st, attr_class as t, push$1 as tt, lifecycle_function_unavailable as u, hydrating as ut, escape_html as v, HYDRATION_ERROR as vt, get as w, noop as wt, writable as x, LEGACY_PROPS as xt, is_passive_event as y, EFFECT_PRESERVED as yt, get_first_child as z };

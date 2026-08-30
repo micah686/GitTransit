@@ -1,5 +1,95 @@
 {
-	"/": [],
-	"/demo": [],
-	"/demo/playwright": []
+	"/(public)": [
+		"src/routes/+layout.server.ts"
+	],
+	"/(app)": [
+		"src/routes/(app)/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/": [
+		"src/routes/+layout.server.ts"
+	],
+	"/api/v1/events": [
+		"src/routes/api/v1/events/+server.ts"
+	],
+	"/api/v1/health": [
+		"src/routes/api/v1/health/+server.ts"
+	],
+	"/api/v1/ready": [
+		"src/routes/api/v1/ready/+server.ts"
+	],
+	"/(app)/conflicts": [
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/(app)/connections": [
+		"src/routes/(app)/connections/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/(app)/connections/new": [
+		"src/routes/(app)/connections/new/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/(app)/connections/[id]": [
+		"src/routes/(app)/connections/[id]/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/health": [
+		"src/routes/health/+server.ts"
+	],
+	"/(public)/login": [
+		"src/routes/(public)/login/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/logout": [
+		"src/routes/logout/+server.ts"
+	],
+	"/(app)/pairs": [
+		"src/routes/(app)/pairs/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/(app)/pairs/new": [
+		"src/routes/(app)/pairs/new/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/(app)/pairs/[id]": [
+		"src/routes/(app)/pairs/[id]/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/ready": [
+		"src/routes/ready/+server.ts"
+	],
+	"/(app)/repositories": [
+		"src/routes/(app)/repositories/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/(app)/repositories/[id]": [
+		"src/routes/(app)/repositories/[id]/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/(app)/runs": [
+		"src/routes/(app)/runs/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/(app)/runs/[id]": [
+		"src/routes/(app)/runs/[id]/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/(public)/setup": [
+		"src/routes/(public)/setup/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	]
 }

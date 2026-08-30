@@ -1,5 +1,5 @@
-import "./internal.js";
-import { o as base, s as initial_base } from "./internal2.js";
+import { o as base, s as initial_base } from "./internal.js";
+import "./internal2.js";
 import { l as add_data_suffix, n as resolve_route } from "./routing.js";
 import { try_get_request_store } from "@sveltejs/kit/internal/server";
 //#region node_modules/@sveltejs/kit/src/runtime/app/paths/server.js

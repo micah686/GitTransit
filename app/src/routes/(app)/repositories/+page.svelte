@@ -1,33 +1,57 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	let { data, form } = $props();
 </script>
 
 <div class="page-heading">
 	<div>
 		<div class="eyebrow">Inventory</div>
-		<h1>Repositories</h1>
+		<h1>Repository routes</h1>
+		<p class="lede">Filter, inspect, and run owned mappings.</p>
 	</div>
 </div>
-{#if form?.queued}<div class="alert alert-success" role="status">
-		Sync run queued. The worker will execute it with a route lease.
-	</div>{/if}
-{#if form?.error}<div class="alert alert-error" role="alert">{form.error}</div>{/if}
-{#if data.routes.length === 0}<section class="welcome-panel">
-		<div>
-			<h2>No repository routes yet</h2>
-			<p>Create and preview a manual route from Mirror pairs.</p>
-		</div>
-	</section>{:else}<section class="route-list" aria-label="Repository routes">
+<form method="GET" class="filter-bar">
+	<input
+		class="input-bordered input"
+		name="q"
+		placeholder="Repository path"
+		value={data.filters.text ?? ''}
+	/><select class="select-bordered select" name="status"
+		><option value="">Any status</option
+		>{#each ['planned', 'ready', 'syncing', 'synced', 'blocked', 'failed', 'missing', 'ignored'] as status (status)}<option
+				value={status}>{status}</option
+			>{/each}</select
+	><select class="select-bordered select" name="direction"
+		><option value="">Any direction</option><option value="one-way">One-way</option><option
+			value="two-way">Two-way</option
+		></select
+	><button class="btn btn-outline">Filter</button>
+</form>
+{#if form?.queued !== undefined}<div class="alert alert-success">
+		Queued {form.queued} routes.
+	</div>{/if}{#if form?.error}<div class="alert alert-error">{form.error}</div>{/if}
+<form method="POST" action="?/run">
+	<div class="bulk-bar"><button class="btn btn-primary btn-sm">Run selected</button></div>
+	<section class="route-list">
 		{#each data.routes as route (route.routeId)}<article>
-				<div><strong>{route.sourcePath}</strong><small>{route.sourceUrl}</small></div>
+				<input
+					class="checkbox"
+					type="checkbox"
+					name="routeId"
+					value={route.routeId}
+					aria-label={`Select ${route.sourcePath}`}
+				/>
+				<div>
+					<a href={resolve(`/repositories/${route.routeId}`)}><strong>{route.sourcePath}</strong></a
+					><small>{route.pairName}</small>
+				</div>
 				<span aria-label="mirrors to">⇒</span>
-				<div><strong>{route.targetPath}</strong><small>{route.targetUrl}</small></div>
-				<span class="badge badge-outline">{route.status}</span>
-				<form method="POST" action="?/run">
-					<input type="hidden" name="routeId" value={route.routeId} /><button
-						class="btn btn-primary btn-sm"
-						type="submit">Run</button
+				<div>
+					<strong>{route.targetPath ?? 'Awaiting provisioning'}</strong><small
+						>{route.warning ?? ''}</small
 					>
-				</form>
+				</div>
+				<span class="badge badge-outline">{route.status}</span>
 			</article>{/each}
-	</section>{/if}
+	</section>
+</form>

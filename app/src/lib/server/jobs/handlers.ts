@@ -11,6 +11,7 @@ import { entityId, type ContentPolicy, type SafetyPolicy } from '../domain/types
 import type { AuthenticatedEndpoint } from '../git/types';
 import { decodeCredentialEnvelope } from '../application/connection-service';
 import { DiscoveryService } from '../application/discovery-service';
+import { PairService } from '../application/pair-service';
 
 export type StepHandler = (
 	claim: StepClaim,
@@ -78,12 +79,29 @@ export function phaseThreeHandlers(db: SqliteDatabase): StepHandlerRegistry {
 		artifactRoot: path.join(config.dataDir, 'backups')
 	});
 	const discovery = new DiscoveryService(db, () => encryption);
+	const pairs = new PairService(db);
 	registry.register('discover-provider', async (claim, signal) => {
 		if (signal.aborted) throw signal.reason;
 		const connectionId = claim.checkpoint.connectionId;
 		if (typeof connectionId !== 'string') throw new Error('Discovery step lacks a connection ID.');
 		const result = await discovery.refresh(claim.ownerId, connectionId, signal);
 		return { connectionId, ...result };
+	});
+	registry.register('propose-routes', async (claim, signal) => {
+		if (signal.aborted) throw signal.reason;
+		const pairId = claim.checkpoint.pairId;
+		if (typeof pairId !== 'string') throw new Error('Proposal step lacks a pair ID.');
+		return { pairId, routes: pairs.refreshProposals(claim.ownerId, pairId) };
+	});
+	registry.register('provision-target', async (claim, signal) => {
+		if (!claim.routeId) throw new Error('Provisioning requires a route.');
+		return pairs.provision(claim.ownerId, claim.routeId, signal);
+	});
+	registry.register('reconcile-endpoint', async (claim, signal) => {
+		if (!claim.routeId) throw new Error('Endpoint reconciliation requires a route.');
+		const result = await pairs.reconcileEndpoint(claim.ownerId, claim.routeId, signal);
+		if (result.state === 'missing') throw new Error('The target endpoint no longer exists.');
+		return result;
 	});
 	registry.register('sync-one-way', async (claim, signal) => {
 		if (signal.aborted) throw signal.reason;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	let { data } = $props();
 </script>
 
@@ -7,7 +8,7 @@
 		<div class="eyebrow">Control plane</div>
 		<h1>Good to see you</h1>
 	</div>
-	<button class="btn btn-primary" type="button" disabled>Create mirror pair</button>
+	<a class="btn btn-primary" href={resolve('/pairs/new')}>Create mirror pair</a>
 </div>
 <section class="welcome-panel">
 	<div class="welcome-icon" aria-hidden="true">⇄</div>
@@ -50,5 +51,5 @@
 			<p>Credentials stay encrypted and are never returned to the browser.</p>
 		</div>
 	</div>
-	<button class="btn btn-outline" type="button" disabled>Coming in Phase 4</button>
+	<a class="btn btn-outline" href={resolve('/connections/new')}>Add connection</a>
 </section>
