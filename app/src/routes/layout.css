@@ -112,6 +112,65 @@ input {
 	gap: 1.1rem;
 	margin-top: 1.5rem;
 }
+.route-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+	gap: 1rem;
+}
+.checkbox-field {
+	grid-template-columns: auto 1fr;
+	align-items: center;
+	align-content: end;
+}
+.preview-panel,
+.route-list {
+	display: grid;
+	gap: 1rem;
+	margin-top: 1.5rem;
+	padding: 1.25rem;
+	border: 1px solid var(--gt-line);
+	border-radius: 1rem;
+	background: var(--color-base-100);
+}
+.preview-panel h2,
+.preview-panel p,
+.route-list h2 {
+	margin: 0;
+}
+.action-summary {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+.route-list article {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto auto;
+	align-items: center;
+	gap: 1rem;
+	padding-block: 0.8rem;
+	border-bottom: 1px solid var(--gt-line);
+}
+.route-list article:last-child {
+	border-bottom: 0;
+}
+.route-list article div {
+	min-width: 0;
+	display: grid;
+	gap: 0.2rem;
+}
+.route-list small {
+	overflow: hidden;
+	color: var(--gt-muted);
+	text-overflow: ellipsis;
+}
+@media (max-width: 640px) {
+	.route-list article {
+		grid-template-columns: 1fr auto;
+	}
+	.route-list article > span[aria-label] {
+		display: none;
+	}
+}
 .form-field {
 	display: grid;
 	gap: 0.45rem;

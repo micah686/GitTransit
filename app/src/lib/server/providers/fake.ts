@@ -53,7 +53,7 @@ export class FakeProviderAdapter implements ProviderAdapter {
 	normalize(input: RemoteRepositoryInput): NormalizedRepository {
 		const displayPath = input.fullPath.trim().replace(/^\/+|\/+$/g, '');
 		const cloneUrl = new URL(input.cloneUrl);
-		if (cloneUrl.username || cloneUrl.password)
+		if (cloneUrl.password || (cloneUrl.username && cloneUrl.protocol !== 'ssh:'))
 			throw new Error('Clone URLs must not contain embedded credentials.');
 		return {
 			externalId: input.externalId,

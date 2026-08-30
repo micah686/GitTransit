@@ -37,4 +37,13 @@ describe.each(adapters)('$id provider contract', (adapter) => {
 			})
 		).toThrow('must not contain embedded credentials');
 	});
+
+	it('permits the non-secret user component of an SSH URL', () => {
+		const normalized = adapter.normalize({
+			externalId: 'ssh-1',
+			fullPath: 'team/repo',
+			cloneUrl: 'ssh://git@example.test/team/repo.git'
+		});
+		expect(normalized.cloneUrl.username).toBe('git');
+	});
 });

@@ -47,6 +47,22 @@ export async function planOneWayRef(
 	return { kind: 'delete', ref, oldOid: b, from: 'B' };
 }
 
+export async function planOneWayRefs(
+	a: RefMap,
+	b: RefMap,
+	targetOnly: TargetOnlyRefPolicy,
+	isAncestor: AncestryCheck
+): Promise<readonly RefAction[]> {
+	const refs = new Set<RefName>([...a.keys(), ...b.keys()]);
+	const actions: RefAction[] = [];
+	for (const ref of [...refs].sort()) {
+		actions.push(
+			await planOneWayRef(ref, a.get(ref) ?? null, b.get(ref) ?? null, targetOnly, isAncestor)
+		);
+	}
+	return actions;
+}
+
 export async function planTwoWayRef(
 	ref: RefName,
 	baseline: RefBaseline,

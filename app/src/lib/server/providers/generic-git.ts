@@ -27,7 +27,7 @@ export class GenericGitProviderAdapter implements ProviderAdapter {
 
 	normalize(input: RemoteRepositoryInput): NormalizedRepository {
 		const cloneUrl = new URL(input.cloneUrl);
-		if (cloneUrl.username || cloneUrl.password)
+		if (cloneUrl.password || (cloneUrl.username && cloneUrl.protocol !== 'ssh:'))
 			throw new Error('Clone URLs must not contain embedded credentials.');
 		if (!['https:', 'http:', 'ssh:'].includes(cloneUrl.protocol)) {
 			throw new Error('Generic Git endpoints must use HTTP(S) or SSH.');

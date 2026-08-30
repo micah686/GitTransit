@@ -230,6 +230,13 @@ export class JobQueue {
 				this.db
 					.prepare("UPDATE runs SET state='succeeded',completed_at=? WHERE id=?")
 					.run(now, claim.runId);
+				if (claim.name === 'sync-one-way' && claim.routeId)
+					this.db
+						.prepare(
+							`UPDATE repository_routes SET status='synced',last_successful_run_id=?,
+						 safe_error_code=NULL,updated_at=? WHERE id=? AND user_id=?`
+						)
+						.run(claim.runId, now, claim.routeId, claim.ownerId);
 				appendEvent(
 					this.db,
 					claim.ownerId,

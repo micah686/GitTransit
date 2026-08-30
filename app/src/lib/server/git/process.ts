@@ -26,6 +26,7 @@ export class SafeProcessError extends Error {
 
 export async function runProcess(request: ProcessRequest): Promise<ProcessResult> {
 	return new Promise((resolve, reject) => {
+		let timedOut = false;
 		const child = spawn(request.command, [...request.args], {
 			...(request.cwd ? { cwd: request.cwd } : {}),
 			env: { PATH: process.env.PATH ?? '', HOME: process.env.HOME ?? '', ...request.env },
@@ -34,7 +35,10 @@ export async function runProcess(request: ProcessRequest): Promise<ProcessResult
 		});
 		let stdout = '';
 		let stderr = '';
-		const timer = setTimeout(() => child.kill('SIGKILL'), request.timeoutMs);
+		const timer = setTimeout(() => {
+			timedOut = true;
+			child.kill('SIGKILL');
+		}, request.timeoutMs);
 		child.stdout.setEncoding('utf8').on('data', (chunk: string) => (stdout += chunk));
 		child.stderr.setEncoding('utf8').on('data', (chunk: string) => (stderr += chunk));
 		child.once('error', (error) => {
@@ -44,11 +48,11 @@ export async function runProcess(request: ProcessRequest): Promise<ProcessResult
 		child.once('close', (code, signal) => {
 			clearTimeout(timer);
 			const redact = request.redact ?? ((value: string) => value);
-			if (code === 0) resolve({ stdout, stderr: redact(stderr) });
+			if (code === 0) resolve({ stdout: redact(stdout), stderr: redact(stderr) });
 			else {
 				reject(
 					new SafeProcessError(
-						`${request.command} failed (${signal ?? `exit ${String(code)}`}): ${redact(stderr).trim()}`,
+						`${request.command} ${timedOut ? 'timed out' : `failed (${signal ?? `exit ${String(code)}`})`}: ${redact(stderr).trim()}`,
 						code
 					)
 				);
