@@ -54,6 +54,22 @@ export async function checkReadiness(): Promise<ReadinessResult> {
 		checks.git = 'failed';
 	}
 	try {
+		const required = (
+			database()
+				.prepare(
+					"SELECT COUNT(*) count FROM mirror_pairs WHERE state='enabled' AND json_extract(content_policy_json,'$.lfs')='on'"
+				)
+				.get() as { count: number }
+		).count;
+		if (required > 0)
+			await execFileAsync(process.env.GITTRANSIT_GIT_PATH ?? 'git', ['lfs', 'version'], {
+				timeout: 3_000
+			});
+		checks.lfs = 'ok';
+	} catch {
+		checks.lfs = 'failed';
+	}
+	try {
 		const db = database();
 		const activeWork = (
 			db

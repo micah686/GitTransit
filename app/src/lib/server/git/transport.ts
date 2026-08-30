@@ -31,6 +31,10 @@ function endpointArgument(endpoint: AuthenticatedEndpoint): string {
 		throw new Error('Git URLs must not contain embedded HTTP credentials.');
 	return endpoint.url.protocol === 'file:' ? endpoint.url.pathname : endpoint.url.toString();
 }
+function pushEndpointArgument(endpoint: AuthenticatedEndpoint): string {
+	if (!endpoint.pushUrl) return endpointArgument(endpoint);
+	return endpointArgument({ ...endpoint, url: endpoint.pushUrl });
+}
 
 function managedRef(value: string): value is RefName {
 	return (
@@ -210,7 +214,7 @@ export class ControlledGitTransport implements GitTransport {
 			'--porcelain',
 			'--atomic',
 			...leaseArgs,
-			endpointArgument(endpoint),
+			pushEndpointArgument(endpoint),
 			...refspecs
 		];
 		await withCredential(endpoint, (scope) =>

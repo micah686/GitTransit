@@ -29,9 +29,12 @@ declare module "$app/types" {
 	type MatcherParam<M> = M extends (param : string) => param is (infer U extends string) ? U : string;
 
 	export interface AppTypes {
-		RouteId(): "/(public)" | "/(app)" | "/" | "/api" | "/api/v1" | "/api/v1/approvals" | "/api/v1/approvals/[id]" | "/api/v1/events" | "/api/v1/health" | "/api/v1/maintenance" | "/api/v1/maintenance/cleanup" | "/api/v1/metrics" | "/api/v1/ready" | "/(app)/approvals" | "/(app)/conflicts" | "/(app)/connections" | "/(app)/connections/new" | "/(app)/connections/[id]" | "/demo" | "/demo/playwright" | "/health" | "/(public)/login" | "/logout" | "/(app)/pairs" | "/(app)/pairs/new" | "/(app)/pairs/[id]" | "/ready" | "/(app)/repositories" | "/(app)/repositories/[id]" | "/(app)/runs" | "/(app)/runs/[id]" | "/(app)/settings" | "/(app)/settings/authentication" | "/(app)/settings/general" | "/(app)/settings/maintenance" | "/(public)/setup";
+		RouteId(): "/(public)" | "/(app)" | "/" | "/api" | "/api/v1" | "/api/v1/approvals" | "/api/v1/approvals/[id]" | "/api/v1/conflicts" | "/api/v1/conflicts/[id]" | "/api/v1/conflicts/[id]/resolve" | "/api/v1/events" | "/api/v1/health" | "/api/v1/maintenance" | "/api/v1/maintenance/cleanup" | "/api/v1/metrics" | "/api/v1/ready" | "/(app)/approvals" | "/(app)/conflicts" | "/(app)/conflicts/[id]" | "/(app)/connections" | "/(app)/connections/new" | "/(app)/connections/[id]" | "/demo" | "/demo/playwright" | "/health" | "/(public)/login" | "/logout" | "/(app)/pairs" | "/(app)/pairs/new" | "/(app)/pairs/[id]" | "/ready" | "/(app)/repositories" | "/(app)/repositories/[id]" | "/(app)/runs" | "/(app)/runs/[id]" | "/(app)/settings" | "/(app)/settings/authentication" | "/(app)/settings/general" | "/(app)/settings/maintenance" | "/(public)/setup";
 		RouteParams(): {
 			"/api/v1/approvals/[id]": { id: string };
+			"/api/v1/conflicts/[id]": { id: string };
+			"/api/v1/conflicts/[id]/resolve": { id: string };
+			"/(app)/conflicts/[id]": { id: string };
 			"/(app)/connections/[id]": { id: string };
 			"/(app)/pairs/[id]": { id: string };
 			"/(app)/repositories/[id]": { id: string };
@@ -45,6 +48,9 @@ declare module "$app/types" {
 			"/api/v1": { id?: string | undefined };
 			"/api/v1/approvals": { id?: string | undefined };
 			"/api/v1/approvals/[id]": { id: string };
+			"/api/v1/conflicts": { id?: string | undefined };
+			"/api/v1/conflicts/[id]": { id: string };
+			"/api/v1/conflicts/[id]/resolve": { id: string };
 			"/api/v1/events": Record<string, never>;
 			"/api/v1/health": Record<string, never>;
 			"/api/v1/maintenance": Record<string, never>;
@@ -52,7 +58,8 @@ declare module "$app/types" {
 			"/api/v1/metrics": Record<string, never>;
 			"/api/v1/ready": Record<string, never>;
 			"/(app)/approvals": Record<string, never>;
-			"/(app)/conflicts": Record<string, never>;
+			"/(app)/conflicts": { id?: string | undefined };
+			"/(app)/conflicts/[id]": { id: string };
 			"/(app)/connections": { id?: string | undefined };
 			"/(app)/connections/new": Record<string, never>;
 			"/(app)/connections/[id]": { id: string };
@@ -75,7 +82,7 @@ declare module "$app/types" {
 			"/(app)/settings/maintenance": Record<string, never>;
 			"/(public)/setup": Record<string, never>
 		};
-		Pathname(): "/" | `/api/v1/approvals/${string}` & {} | "/api/v1/events" | "/api/v1/health" | "/api/v1/maintenance/cleanup" | "/api/v1/metrics" | "/api/v1/ready" | "/approvals" | "/conflicts" | "/connections" | "/connections/new" | `/connections/${string}` & {} | "/health" | "/login" | "/logout" | "/pairs" | "/pairs/new" | `/pairs/${string}` & {} | "/ready" | "/repositories" | `/repositories/${string}` & {} | "/runs" | `/runs/${string}` & {} | "/settings/maintenance" | "/setup";
+		Pathname(): "/" | `/api/v1/approvals/${string}` & {} | `/api/v1/conflicts/${string}/resolve` & {} | "/api/v1/events" | "/api/v1/health" | "/api/v1/maintenance/cleanup" | "/api/v1/metrics" | "/api/v1/ready" | "/approvals" | "/conflicts" | `/conflicts/${string}` & {} | "/connections" | "/connections/new" | `/connections/${string}` & {} | "/health" | "/login" | "/logout" | "/pairs" | "/pairs/new" | `/pairs/${string}` & {} | "/ready" | "/repositories" | `/repositories/${string}` & {} | "/runs" | `/runs/${string}` & {} | "/settings/maintenance" | "/setup";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
 		Asset(): "/robots.txt" | string & {};
 	}

@@ -226,6 +226,184 @@ export class JobQueue {
 		});
 	}
 
+	terminalOutcome(
+		claim: StepClaim,
+		outcome: 'conflicted' | 'partial',
+		resourceIds: readonly string[] = []
+	): boolean {
+		return transaction(this.db, () => {
+			const now = databaseNow(this.db);
+			const updated = this.db
+				.prepare(
+					`UPDATE run_steps SET state='failed',completed_at=?,lease_owner=NULL,lease_expires_at=NULL,safe_error_code=? WHERE id=? AND state='running' AND lease_owner=? AND fencing_token=? AND lease_expires_at>?`
+				)
+				.run(
+					now,
+					outcome === 'conflicted' ? 'REF_CONFLICT' : 'PARTIAL_WRITE',
+					claim.stepId,
+					claim.workerId,
+					claim.fencingToken,
+					now
+				);
+			if (updated.changes !== 1) return false;
+			this.db
+				.prepare(
+					'UPDATE runs SET state=?,completed_at=?,safe_error_code=? WHERE id=? AND user_id=?'
+				)
+				.run(
+					outcome,
+					now,
+					outcome === 'conflicted' ? 'REF_CONFLICT' : 'PARTIAL_WRITE',
+					claim.runId,
+					claim.ownerId
+				);
+			if (claim.routeId)
+				this.db
+					.prepare(
+						'UPDATE repository_routes SET status=?,safe_error_code=?,warning_summary=?,updated_at=? WHERE id=? AND user_id=?'
+					)
+					.run(
+						outcome === 'conflicted' ? 'conflict' : 'failed',
+						outcome === 'conflicted' ? 'REF_CONFLICT' : 'PARTIAL_WRITE',
+						outcome === 'conflicted'
+							? 'Two-way ref changes require resolution.'
+							: 'Only part of the two-way plan was applied; the next run will re-observe both remotes.',
+						now,
+						claim.routeId,
+						claim.ownerId
+					);
+			appendEvent(
+				this.db,
+				claim.ownerId,
+				`run.${outcome}`,
+				[claim.runId, ...resourceIds],
+				{ state: outcome },
+				now
+			);
+			return true;
+		});
+	}
+
+	completeTwoWay(claim: StepClaim, checkpoint: Readonly<Record<string, unknown>>): boolean {
+		return transaction(this.db, () => {
+			const refs = checkpoint.baselineRefs;
+			if (!claim.routeId || !Array.isArray(refs) || typeof checkpoint.generation !== 'number')
+				return false;
+			const parsed: Array<{ ref: string; a: string | null; b: string | null }> = [];
+			for (const value of refs) {
+				if (!value || typeof value !== 'object') return false;
+				const item = value as Record<string, unknown>;
+				if (
+					typeof item.ref !== 'string' ||
+					(item.a !== null && typeof item.a !== 'string') ||
+					(item.b !== null && typeof item.b !== 'string')
+				)
+					return false;
+				parsed.push({ ref: item.ref, a: item.a as string | null, b: item.b as string | null });
+			}
+			const now = databaseNow(this.db);
+			const run = this.db
+				.prepare('SELECT cancellation_requested_at FROM runs WHERE id=? AND user_id=?')
+				.get(claim.runId, claim.ownerId) as
+				{ cancellation_requested_at: number | null } | undefined;
+			if (!run) return false;
+			if (run.cancellation_requested_at !== null) {
+				const cancelled = this.db
+					.prepare(
+						`UPDATE run_steps SET state='cancelled',completed_at=?,lease_owner=NULL,lease_expires_at=NULL WHERE id=? AND state='running' AND lease_owner=? AND fencing_token=? AND lease_expires_at>?`
+					)
+					.run(now, claim.stepId, claim.workerId, claim.fencingToken, now);
+				if (cancelled.changes !== 1) return false;
+				this.db
+					.prepare("UPDATE runs SET state='cancelled',completed_at=? WHERE id=? AND user_id=?")
+					.run(now, claim.runId, claim.ownerId);
+				appendEvent(
+					this.db,
+					claim.ownerId,
+					'run.cancelled',
+					[claim.runId],
+					{ state: 'cancelled' },
+					now
+				);
+				return true;
+			}
+			const route = this.db
+				.prepare('SELECT generation FROM repository_routes WHERE id=? AND user_id=?')
+				.get(claim.routeId, claim.ownerId) as { generation: number } | undefined;
+			if (!route || route.generation !== checkpoint.generation) return false;
+			const updated = this.db
+				.prepare(
+					`UPDATE run_steps SET state='succeeded',completed_at=?,lease_owner=NULL,lease_expires_at=NULL WHERE id=? AND state='running' AND lease_owner=? AND fencing_token=? AND lease_expires_at>?`
+				)
+				.run(now, claim.stepId, claim.workerId, claim.fencingToken, now);
+			if (updated.changes !== 1) return false;
+			const upsert = this.db.prepare(
+				`INSERT INTO ref_baselines(route_id,ref_name,side_a_oid,side_b_oid,generation,successful_run_id,created_at,updated_at)VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(route_id,ref_name)DO UPDATE SET side_a_oid=excluded.side_a_oid,side_b_oid=excluded.side_b_oid,generation=excluded.generation,successful_run_id=excluded.successful_run_id,updated_at=excluded.updated_at`
+			);
+			for (const ref of parsed)
+				upsert.run(
+					claim.routeId,
+					ref.ref,
+					ref.a,
+					ref.b,
+					checkpoint.generation,
+					claim.runId,
+					now,
+					now
+				);
+			this.db
+				.prepare(
+					`INSERT INTO route_reconciliation_state(route_id,initialized,generation,successful_run_id,updated_at)VALUES(?,1,?,?,?) ON CONFLICT(route_id)DO UPDATE SET initialized=1,generation=excluded.generation,successful_run_id=excluded.successful_run_id,updated_at=excluded.updated_at`
+				)
+				.run(claim.routeId, checkpoint.generation, claim.runId, now);
+			if (typeof checkpoint.conflictId === 'string')
+				this.db
+					.prepare(
+						"UPDATE conflicts SET state='resolved',resolution=?,resolved_by=?,resolved_at=? WHERE id=? AND user_id=? AND state='open'"
+					)
+					.run(
+						typeof checkpoint.resolution === 'string' ? checkpoint.resolution : 'external',
+						claim.ownerId,
+						now,
+						checkpoint.conflictId,
+						claim.ownerId
+					);
+			this.db
+				.prepare(
+					'UPDATE runs SET progress_completed=progress_completed+1,heartbeat_at=? WHERE id=?'
+				)
+				.run(now, claim.runId);
+			const active = (
+				this.db
+					.prepare(
+						"SELECT COUNT(*) count FROM run_steps WHERE run_id=? AND state IN ('queued','running')"
+					)
+					.get(claim.runId) as { count: number }
+			).count;
+			if (active === 0) {
+				this.db
+					.prepare(
+						"UPDATE runs SET state='succeeded',completed_at=?,safe_error_code=NULL WHERE id=? AND user_id=?"
+					)
+					.run(now, claim.runId, claim.ownerId);
+				this.db
+					.prepare(
+						"UPDATE repository_routes SET status='synced',last_successful_run_id=?,safe_error_code=NULL,warning_summary=NULL,updated_at=? WHERE id=? AND user_id=?"
+					)
+					.run(claim.runId, now, claim.routeId, claim.ownerId);
+				appendEvent(
+					this.db,
+					claim.ownerId,
+					'run.succeeded',
+					[claim.runId, claim.routeId],
+					{ state: 'succeeded' },
+					now
+				);
+			}
+			return true;
+		});
+	}
+
 	complete(claim: StepClaim): boolean {
 		return transaction(this.db, () => {
 			const now = databaseNow(this.db);

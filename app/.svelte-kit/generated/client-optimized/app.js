@@ -28,7 +28,8 @@ export const nodes = [
 	() => import('./nodes/16'),
 	() => import('./nodes/17'),
 	() => import('./nodes/18'),
-	() => import('./nodes/19')
+	() => import('./nodes/19'),
+	() => import('./nodes/20')
 ];
 
 export const server_loads = [0,2];
@@ -36,20 +37,21 @@ export const server_loads = [0,2];
 export const dictionary = {
 		"/(app)": [~4,[2]],
 		"/(app)/approvals": [~5,[2]],
-		"/(app)/conflicts": [6,[2]],
-		"/(app)/connections": [~7,[2]],
-		"/(app)/connections/new": [9,[2]],
-		"/(app)/connections/[id]": [~8,[2]],
-		"/(public)/login": [~18,[3]],
-		"/(app)/pairs": [~10,[2]],
-		"/(app)/pairs/new": [~12,[2]],
-		"/(app)/pairs/[id]": [~11,[2]],
-		"/(app)/repositories": [~13,[2]],
-		"/(app)/repositories/[id]": [~14,[2]],
-		"/(app)/runs": [~15,[2]],
-		"/(app)/runs/[id]": [~16,[2]],
-		"/(app)/settings/maintenance": [17,[2]],
-		"/(public)/setup": [~19,[3]]
+		"/(app)/conflicts": [~6,[2]],
+		"/(app)/conflicts/[id]": [~7,[2]],
+		"/(app)/connections": [~8,[2]],
+		"/(app)/connections/new": [10,[2]],
+		"/(app)/connections/[id]": [~9,[2]],
+		"/(public)/login": [~19,[3]],
+		"/(app)/pairs": [~11,[2]],
+		"/(app)/pairs/new": [~13,[2]],
+		"/(app)/pairs/[id]": [~12,[2]],
+		"/(app)/repositories": [~14,[2]],
+		"/(app)/repositories/[id]": [~15,[2]],
+		"/(app)/runs": [~16,[2]],
+		"/(app)/runs/[id]": [~17,[2]],
+		"/(app)/settings/maintenance": [18,[2]],
+		"/(public)/setup": [~20,[3]]
 	};
 
 export const hooks = {

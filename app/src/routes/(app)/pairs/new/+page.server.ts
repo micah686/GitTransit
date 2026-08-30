@@ -66,7 +66,10 @@ function input(form: FormData): PairValues {
 		autoProvision: form.get('autoProvision') === 'on',
 		collisionStrategy: String(
 			form.get('collisionStrategy') ?? 'block'
-		) as PairValues['collisionStrategy']
+		) as PairValues['collisionStrategy'],
+		initialBaselineMode: String(
+			form.get('initialBaselineMode') ?? 'require-equality'
+		) as PairValues['initialBaselineMode']
 	};
 }
 function validate(value: PairValues): void {
@@ -79,6 +82,9 @@ function validate(value: PairValues): void {
 		!['block', 'suffix'].includes(value.collisionStrategy) ||
 		!['fast-forward-only', 'backup-and-apply', 'approve-destructive', 'never-delete'].includes(
 			value.safety.strategy
+		) ||
+		!['require-equality', 'seed-a-to-b', 'seed-b-to-a', 'manual'].includes(
+			value.initialBaselineMode
 		)
 	)
 		throw new Error('Choose valid pair and scheduling options.');

@@ -15,6 +15,9 @@
 	"/api/v1/approvals/[id]": [
 		"src/routes/api/v1/approvals/[id]/+server.ts"
 	],
+	"/api/v1/conflicts/[id]/resolve": [
+		"src/routes/api/v1/conflicts/[id]/resolve/+server.ts"
+	],
 	"/api/v1/events": [
 		"src/routes/api/v1/events/+server.ts"
 	],
@@ -36,6 +39,12 @@
 		"src/routes/+layout.server.ts"
 	],
 	"/(app)/conflicts": [
+		"src/routes/(app)/conflicts/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/(app)/conflicts/[id]": [
+		"src/routes/(app)/conflicts/[id]/+page.server.ts",
 		"src/routes/(app)/+layout.server.ts",
 		"src/routes/+layout.server.ts"
 	],

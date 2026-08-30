@@ -99,7 +99,8 @@ function fixture() {
 			operationTimeoutMs: 120000
 		},
 		autoProvision: true,
-		collisionStrategy: 'block'
+		collisionStrategy: 'block',
+		initialBaselineMode: 'require-equality'
 	};
 	return { ownerId, sourceId, values };
 }

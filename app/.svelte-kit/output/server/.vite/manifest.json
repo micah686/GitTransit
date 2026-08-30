@@ -36,6 +36,14 @@
       "_database.js"
     ]
   },
+  "_conflict-service.js": {
+    "file": "chunks/conflict-service.js",
+    "name": "conflict-service",
+    "imports": [
+      "_database.js",
+      "_queue.js"
+    ]
+  },
   "_connection-service.js": {
     "file": "chunks/connection-service.js",
     "name": "connection-service",
@@ -274,10 +282,38 @@
       "_server.js"
     ]
   },
+  "src/routes/(app)/conflicts/+page.server.ts": {
+    "file": "entries/pages/(app)/conflicts/_page.server.ts.js",
+    "name": "entries/pages/(app)/conflicts/_page.server.ts",
+    "src": "src/routes/(app)/conflicts/+page.server.ts",
+    "isEntry": true,
+    "imports": [
+      "_conflict-service.js"
+    ]
+  },
   "src/routes/(app)/conflicts/+page.svelte": {
     "file": "entries/pages/(app)/conflicts/_page.svelte.js",
     "name": "entries/pages/(app)/conflicts/_page.svelte",
     "src": "src/routes/(app)/conflicts/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_server.js",
+      "_paths.js"
+    ]
+  },
+  "src/routes/(app)/conflicts/[id]/+page.server.ts": {
+    "file": "entries/pages/(app)/conflicts/_id_/_page.server.ts.js",
+    "name": "entries/pages/(app)/conflicts/_id_/_page.server.ts",
+    "src": "src/routes/(app)/conflicts/[id]/+page.server.ts",
+    "isEntry": true,
+    "imports": [
+      "_conflict-service.js"
+    ]
+  },
+  "src/routes/(app)/conflicts/[id]/+page.svelte": {
+    "file": "entries/pages/(app)/conflicts/_id_/_page.svelte.js",
+    "name": "entries/pages/(app)/conflicts/_id_/_page.svelte",
+    "src": "src/routes/(app)/conflicts/[id]/+page.svelte",
     "isEntry": true,
     "imports": [
       "_server.js"
@@ -309,9 +345,9 @@
     "isEntry": true,
     "imports": [
       "_database.js",
+      "_queue.js",
       "_credentials.js",
-      "_connection-service.js",
-      "_queue.js"
+      "_connection-service.js"
     ]
   },
   "src/routes/(app)/connections/[id]/+page.svelte": {
@@ -566,7 +602,7 @@
       "_server.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.DjxSn98d.css"
+      "_app/immutable/assets/_layout.DJCvk10Z.css"
     ]
   },
   "src/routes/api/v1/approvals/[id]/+server.ts": {
@@ -576,6 +612,15 @@
     "isEntry": true,
     "imports": [
       "_approvals.js"
+    ]
+  },
+  "src/routes/api/v1/conflicts/[id]/resolve/+server.ts": {
+    "file": "entries/endpoints/api/v1/conflicts/_id_/resolve/_server.ts.js",
+    "name": "entries/endpoints/api/v1/conflicts/_id_/resolve/_server.ts",
+    "src": "src/routes/api/v1/conflicts/[id]/resolve/+server.ts",
+    "isEntry": true,
+    "imports": [
+      "_conflict-service.js"
     ]
   },
   "src/routes/api/v1/events/+server.ts": {

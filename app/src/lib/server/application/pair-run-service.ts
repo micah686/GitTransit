@@ -36,8 +36,6 @@ export class PairRunService {
 			| undefined;
 		if (!pair) throw new Error('Pair not found.');
 		if (pair.state === 'paused') throw new Error('Resume this pair before running it.');
-		if (pair.direction !== 'one-way')
-			throw new Error('Two-way execution is introduced in Phase 7.');
 		const policy = JSON.parse(pair.schedule_policy_json) as SchedulePolicy;
 		const selection = JSON.parse(pair.selection_policy_json) as {
 			extensions?: { autoProvision?: boolean };
@@ -71,7 +69,11 @@ export class PairRunService {
 					...(route.side_b_repository_id
 						? [{ name: 'reconcile-endpoint', routeId: route.id, maxAttempts: policy.retryAttempts }]
 						: [{ name: 'provision-target', routeId: route.id, maxAttempts: policy.retryAttempts }]),
-					{ name: 'sync-one-way', routeId: route.id, maxAttempts: policy.retryAttempts }
+					{
+						name: pair.direction === 'two-way' ? 'sync-two-way' : 'sync-one-way',
+						routeId: route.id,
+						maxAttempts: policy.retryAttempts
+					}
 				]
 			})
 		);

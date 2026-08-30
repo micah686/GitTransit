@@ -3,6 +3,7 @@ import type { GitCredential } from './credentials';
 
 export interface AuthenticatedEndpoint {
 	readonly url: URL;
+	readonly pushUrl?: URL;
 	readonly credentialId: string | null;
 	readonly stableIdentity: string;
 	readonly credential?: GitCredential;

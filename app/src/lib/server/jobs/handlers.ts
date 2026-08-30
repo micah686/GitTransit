@@ -7,12 +7,26 @@ import { config } from '../config';
 import { ControlledGitTransport } from '../git/transport';
 import { executeOneWay } from '../git/one-way';
 import { CredentialEncryptionService, loadEncryptionKey } from '../crypto/credentials';
-import { entityId, type ContentPolicy, type SafetyPolicy } from '../domain/types';
+import {
+	entityId,
+	type ContentPolicy,
+	type ImmutableRefPlan,
+	type SafetyPolicy
+} from '../domain/types';
 import type { AuthenticatedEndpoint } from '../git/types';
 import { decodeCredentialEnvelope } from '../application/connection-service';
 import { DiscoveryService } from '../application/discovery-service';
 import { PairService } from '../application/pair-service';
 import { ApprovalService } from '../safety/approvals';
+import { planDigest } from '../safety/approvals';
+import { executeTwoWay, PartialTwoWayError, type TwoWayResolution } from '../git/two-way';
+import {
+	refName,
+	oid,
+	type InitialBaselineMode,
+	type RefBaseline,
+	type RefName
+} from '../domain/types';
 
 export type StepHandler = (
 	claim: StepClaim,
@@ -57,6 +71,12 @@ interface SyncRouteRow {
 	b_credential_id: string | null;
 	a_encrypted: string | null;
 	b_encrypted: string | null;
+}
+
+interface TwoWayRouteRow extends SyncRouteRow {
+	a_push_url: string;
+	b_fetch_url: string;
+	selection_policy_json: string;
 }
 
 function claimIsCurrent(db: SqliteDatabase, claim: StepClaim): boolean {
@@ -222,5 +242,297 @@ export function phaseThreeHandlers(db: SqliteDatabase): StepHandlerRegistry {
 		});
 		return { state: result.state, actionCount: result.plan.actions.length };
 	});
+	registry.register('sync-two-way', async (claim, signal) => {
+		if (signal.aborted) throw signal.reason;
+		if (!claim.routeId) throw new Error('A two-way sync step requires a route.');
+		const row = db
+			.prepare(
+				`SELECT r.id route_id,p.version pair_version,r.generation route_generation,p.content_policy_json,p.safety_policy_json,p.selection_policy_json,a.fetch_url a_url,a.push_url a_push_url,b.fetch_url b_fetch_url,b.push_url b_url,a.provider_identity a_identity,b.provider_identity b_identity,ca.credential_id a_credential_id,cb.credential_id b_credential_id,cra.encrypted_payload a_encrypted,crb.encrypted_payload b_encrypted FROM repository_routes r JOIN mirror_pairs p ON p.id=r.pair_id AND p.user_id=r.user_id JOIN route_endpoints a ON a.route_id=r.id AND a.side='A' JOIN route_endpoints b ON b.route_id=r.id AND b.side='B' JOIN connections ca ON ca.id=a.connection_id AND ca.user_id=r.user_id JOIN connections cb ON cb.id=b.connection_id AND cb.user_id=r.user_id LEFT JOIN credentials cra ON cra.id=ca.credential_id LEFT JOIN credentials crb ON crb.id=cb.credential_id WHERE r.id=? AND r.user_id=? AND p.direction='two-way'`
+			)
+			.get(claim.routeId, claim.ownerId) as TwoWayRouteRow | undefined;
+		if (!row) throw new Error('The two-way route is unavailable.');
+		const endpoint = (
+			fetchUrl: string,
+			pushUrl: string,
+			identity: string | null,
+			credentialId: string | null,
+			encrypted: string | null
+		): AuthenticatedEndpoint => {
+			const url = new URL(fetchUrl);
+			const decrypted =
+				credentialId && encrypted
+					? decodeCredentialEnvelope(
+							encryption.decrypt(JSON.parse(encrypted), claim.ownerId, credentialId)
+						)
+					: null;
+			const credential =
+				credentialId && decrypted && ['http:', 'https:'].includes(url.protocol)
+					? {
+							kind: 'https' as const,
+							username: decrypted.username ?? 'git',
+							password: decrypted.secret
+						}
+					: undefined;
+			return {
+				url,
+				pushUrl: new URL(pushUrl),
+				credentialId,
+				stableIdentity: identity ?? fetchUrl,
+				...(credential ? { credential } : {})
+			};
+		};
+		const baselineRows = db
+			.prepare('SELECT ref_name,side_a_oid,side_b_oid FROM ref_baselines WHERE route_id=?')
+			.all(row.route_id) as Array<{
+			ref_name: string;
+			side_a_oid: string | null;
+			side_b_oid: string | null;
+		}>;
+		const baselines = new Map<RefName, RefBaseline>(
+			baselineRows.map((item) => [
+				refName(item.ref_name),
+				{
+					a: item.side_a_oid ? oid(item.side_a_oid) : null,
+					b: item.side_b_oid ? oid(item.side_b_oid) : null
+				}
+			])
+		);
+		const initialized =
+			(
+				db
+					.prepare('SELECT initialized FROM route_reconciliation_state WHERE route_id=?')
+					.get(row.route_id) as { initialized: number } | undefined
+			)?.initialized === 1;
+		const extensions = (
+			JSON.parse(row.selection_policy_json) as {
+				extensions?: { initialBaselineMode?: InitialBaselineMode };
+			}
+		).extensions;
+		const initialMode = extensions?.initialBaselineMode ?? 'require-equality';
+		const approved = approvals.approvedFor(claim.ownerId, claim.runId, claim.stepId);
+		const resolution = claim.checkpoint.resolution as Record<string, unknown> | undefined;
+		let parsedResolution: TwoWayResolution | undefined;
+		if (resolution && ['A', 'B', 'external'].includes(String(resolution.winner)))
+			parsedResolution = resolution.winner as 'A' | 'B' | 'external';
+		else if (
+			resolution?.kind === 'commit' &&
+			typeof resolution.oid === 'string' &&
+			/^[0-9a-f]{40,64}$/i.test(resolution.oid)
+		)
+			parsedResolution = { kind: 'commit', oid: oid(resolution.oid.toLowerCase()) };
+		else if (
+			resolution?.kind === 'keep-both' &&
+			['A', 'B'].includes(String(resolution.winner)) &&
+			typeof resolution.newRef === 'string' &&
+			/^refs\/heads\/[A-Za-z0-9._/-]+$/.test(resolution.newRef)
+		)
+			parsedResolution = {
+				kind: 'keep-both',
+				winner: resolution.winner as 'A' | 'B',
+				newRef: refName(resolution.newRef)
+			};
+		const resolutions =
+			resolution && typeof resolution.ref === 'string' && parsedResolution
+				? new Map([[refName(resolution.ref), parsedResolution]])
+				: undefined;
+		let result: Awaited<ReturnType<typeof executeTwoWay>>;
+		try {
+			result = await executeTwoWay(transport, {
+				routeId: entityId(row.route_id),
+				runId: claim.runId,
+				endpointA: endpoint(
+					row.a_url,
+					row.a_push_url,
+					row.a_identity,
+					row.a_credential_id,
+					row.a_encrypted
+				),
+				endpointB: endpoint(
+					row.b_fetch_url,
+					row.b_url,
+					row.b_identity,
+					row.b_credential_id,
+					row.b_encrypted
+				),
+				refs: (JSON.parse(row.content_policy_json) as ContentPolicy).refs,
+				safety: JSON.parse(row.safety_policy_json) as SafetyPolicy,
+				lfs: (JSON.parse(row.content_policy_json) as ContentPolicy).lfs,
+				baselines,
+				initialized,
+				initialMode,
+				capabilityGeneration: 1,
+				policyGeneration: row.pair_version + row.route_generation,
+				assertLeaseCurrent: () => claimIsCurrent(db, claim),
+				onPlan: (plan, observedA, observedB) => {
+					persistTwoWayObservations(db, claim, row, observedA, observedB);
+					persistTwoWayPlan(db, claim, row, plan, 'planned');
+				},
+				...(approved ? { approvedPlan: approved.plan } : {}),
+				...(resolutions ? { resolutions } : {})
+			});
+		} catch (error) {
+			if (approved && error instanceof Error && error.message === 'APPROVED_PLAN_STALE')
+				approvals.invalidate(claim.ownerId, approved.id);
+			if (error instanceof PartialTwoWayError) {
+				persistTwoWayObservations(db, claim, row, error.plan.expectedA, error.plan.expectedB);
+				persistTwoWayArtifacts(db, claim, row, error.artifacts);
+				persistTwoWayPlan(db, claim, row, error.plan, 'partial', error.appliedSides);
+				return { outcome: 'partial', appliedSides: error.appliedSides };
+			}
+			throw error;
+		}
+		persistTwoWayObservations(db, claim, row, result.observedA, result.observedB);
+		persistTwoWayPlan(
+			db,
+			claim,
+			row,
+			result.plan,
+			result.state === 'succeeded' ? 'verified' : result.state
+		);
+		if (result.state === 'conflicted') {
+			const ids: string[] = [];
+			transaction(db, () => {
+				for (const action of result.plan.actions) {
+					if (action.kind !== 'conflict') continue;
+					const id = randomUUID(),
+						baseline = baselines.get(action.ref) ?? { a: null, b: null };
+					db.prepare(
+						`INSERT INTO conflicts(id,user_id,route_id,run_id,ref_name,kind,baseline_a,baseline_b,current_a,current_b,state,created_at)VALUES(?,?,?,?,?,?,?,?,?,?,'open',?) ON CONFLICT(run_id,route_id,ref_name) DO UPDATE SET kind=excluded.kind,baseline_a=excluded.baseline_a,baseline_b=excluded.baseline_b,current_a=excluded.current_a,current_b=excluded.current_b`
+					).run(
+						id,
+						claim.ownerId,
+						row.route_id,
+						claim.runId,
+						action.ref,
+						action.reason,
+						baseline.a,
+						baseline.b,
+						result.observedA.get(action.ref) ?? null,
+						result.observedB.get(action.ref) ?? null,
+						Date.now()
+					);
+					const persisted = db
+						.prepare('SELECT id FROM conflicts WHERE run_id=? AND route_id=? AND ref_name=?')
+						.get(claim.runId, row.route_id, action.ref) as { id: string };
+					ids.push(persisted.id);
+				}
+			});
+			return { outcome: 'conflicted', resourceIds: ids };
+		}
+		if (result.state === 'awaiting-approval') {
+			const approvalId = approvals.request(
+				claim.ownerId,
+				claim.runId,
+				claim.stepId,
+				claim.routeId,
+				result.plan
+			);
+			return { outcome: 'awaiting-approval', approvalId };
+		}
+		if (result.state === 'blocked') throw new Error('Two-way plan is blocked by safety policy.');
+		if (result.state !== 'succeeded')
+			throw new Error('Two-way run did not reach a terminal success state.');
+		if (!claimIsCurrent(db, claim))
+			throw new Error('Route lease became stale before baseline commit.');
+		const refs = new Set<RefName>([
+			...baselines.keys(),
+			...result.plan.expectedA.keys(),
+			...result.plan.expectedB.keys(),
+			...result.plan.actions.map((action) => action.ref)
+		]);
+		persistTwoWayArtifacts(db, claim, row, result.artifacts);
+		if (approved) approvals.markApplied(claim.ownerId, approved.id);
+		return {
+			outcome: 'two-way-verified',
+			actionCount: result.plan.actions.length,
+			generation: row.route_generation,
+			baselineRefs: [...refs].map((ref) => ({
+				ref,
+				a: result.finalA.get(ref) ?? null,
+				b: result.finalB.get(ref) ?? null
+			})),
+			...(typeof claim.checkpoint.conflictId === 'string'
+				? {
+						conflictId: claim.checkpoint.conflictId,
+						resolution:
+							typeof resolution?.winner === 'string'
+								? resolution.winner
+								: String(resolution?.kind ?? 'external')
+					}
+				: {})
+		};
+	});
 	return registry;
+}
+
+function persistTwoWayPlan(
+	db: SqliteDatabase,
+	claim: StepClaim,
+	row: TwoWayRouteRow,
+	plan: ImmutableRefPlan,
+	outcome: 'planned' | 'awaiting-approval' | 'conflicted' | 'blocked' | 'partial' | 'verified',
+	appliedSides: readonly ('A' | 'B')[] = []
+): void {
+	const now = Date.now();
+	const stored = {
+		...plan,
+		expectedA: [...plan.expectedA],
+		expectedB: [...plan.expectedB]
+	};
+	db.prepare(
+		`INSERT INTO two_way_plans(run_id,route_id,plan_digest,plan_json,outcome,applied_sides_json,created_at,updated_at)VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(run_id,route_id)DO UPDATE SET plan_digest=excluded.plan_digest,plan_json=excluded.plan_json,outcome=excluded.outcome,applied_sides_json=excluded.applied_sides_json,updated_at=excluded.updated_at`
+	).run(
+		claim.runId,
+		row.route_id,
+		planDigest(plan),
+		JSON.stringify(stored),
+		outcome,
+		JSON.stringify(appliedSides),
+		now,
+		now
+	);
+}
+
+function persistTwoWayObservations(
+	db: SqliteDatabase,
+	claim: StepClaim,
+	row: TwoWayRouteRow,
+	a: ReadonlyMap<string, string>,
+	b: ReadonlyMap<string, string>
+): void {
+	transaction(db, () => {
+		const now = Date.now();
+		const insert = db.prepare(
+			`INSERT OR REPLACE INTO ref_observations(run_id,route_id,side,ref_name,object_id,observed_at)VALUES(?,?,?,?,?,?)`
+		);
+		for (const [name, value] of a) insert.run(claim.runId, row.route_id, 'A', name, value, now);
+		for (const [name, value] of b) insert.run(claim.runId, row.route_id, 'B', name, value, now);
+	});
+}
+function persistTwoWayArtifacts(
+	db: SqliteDatabase,
+	claim: StepClaim,
+	row: TwoWayRouteRow,
+	artifacts: readonly {
+		side: 'A' | 'B';
+		artifact: { path: string; byteSize: number; digest: string };
+	}[]
+): void {
+	const now = Date.now();
+	for (const item of artifacts)
+		db.prepare(
+			`INSERT INTO backup_artifacts(id,user_id,route_id,run_id,protected_side,relative_path,byte_size,digest,manifest_json,verification_status,created_at,expires_at)VALUES(?,?,?,?,?,?,?,?,?,'verified',?,?) ON CONFLICT(run_id,protected_side,relative_path) DO UPDATE SET byte_size=excluded.byte_size,digest=excluded.digest,manifest_json=excluded.manifest_json,verification_status='verified',expires_at=excluded.expires_at`
+		).run(
+			randomUUID(),
+			claim.ownerId,
+			row.route_id,
+			claim.runId,
+			item.side,
+			path.relative(config.dataDir, item.artifact.path),
+			item.artifact.byteSize,
+			item.artifact.digest,
+			JSON.stringify({ endpoint: item.side === 'A' ? row.a_identity : row.b_identity }),
+			now,
+			now + 30 * 86_400_000
+		);
 }

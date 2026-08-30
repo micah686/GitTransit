@@ -10,7 +10,7 @@ return {
 	assets: new Set(["robots.txt"]),
 	mimeTypes: {".txt":"text/plain"},
 	_: {
-		client: {start:"_app/immutable/entry/start.ohXzLduJ.js",app:"_app/immutable/entry/app.Ds2Hc2UV.js",imports:["_app/immutable/entry/start.ohXzLduJ.js","_app/immutable/chunks/yrzCEQGo.js","_app/immutable/chunks/CwbM3z-7.js","_app/immutable/entry/app.Ds2Hc2UV.js","_app/immutable/chunks/CwbM3z-7.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.t9JnwKVM.js",app:"_app/immutable/entry/app.C5SiMB4E.js",imports:["_app/immutable/entry/start.t9JnwKVM.js","_app/immutable/chunks/DkUvB2qk.js","_app/immutable/chunks/DRAAFmg4.js","_app/immutable/entry/app.C5SiMB4E.js","_app/immutable/chunks/DRAAFmg4.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),
@@ -31,7 +31,8 @@ return {
 			__memo(() => import('./nodes/16.js')),
 			__memo(() => import('./nodes/17.js')),
 			__memo(() => import('./nodes/18.js')),
-			__memo(() => import('./nodes/19.js'))
+			__memo(() => import('./nodes/19.js')),
+			__memo(() => import('./nodes/20.js'))
 		],
 		remotes: {
 			
@@ -50,6 +51,13 @@ return {
 				params: [{"name":"id","optional":false,"rest":false,"chained":false}],
 				page: null,
 				endpoint: __memo(() => import('./entries/endpoints/api/v1/approvals/_id_/_server.ts.js'))
+			},
+			{
+				id: "/api/v1/conflicts/[id]/resolve",
+				pattern: /^\/api\/v1\/conflicts\/([^/]+?)\/resolve\/?$/,
+				params: [{"name":"id","optional":false,"rest":false,"chained":false}],
+				page: null,
+				endpoint: __memo(() => import('./entries/endpoints/api/v1/conflicts/_id_/resolve/_server.ts.js'))
 			},
 			{
 				id: "/api/v1/events",
@@ -101,24 +109,31 @@ return {
 				endpoint: null
 			},
 			{
+				id: "/(app)/conflicts/[id]",
+				pattern: /^\/conflicts\/([^/]+?)\/?$/,
+				params: [{"name":"id","optional":false,"rest":false,"chained":false}],
+				page: { layouts: [0,2,], errors: [1,,], leaf: 7 },
+				endpoint: null
+			},
+			{
 				id: "/(app)/connections",
 				pattern: /^\/connections\/?$/,
 				params: [],
-				page: { layouts: [0,2,], errors: [1,,], leaf: 7 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 8 },
 				endpoint: null
 			},
 			{
 				id: "/(app)/connections/new",
 				pattern: /^\/connections\/new\/?$/,
 				params: [],
-				page: { layouts: [0,2,], errors: [1,,], leaf: 9 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 10 },
 				endpoint: null
 			},
 			{
 				id: "/(app)/connections/[id]",
 				pattern: /^\/connections\/([^/]+?)\/?$/,
 				params: [{"name":"id","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,2,], errors: [1,,], leaf: 8 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 9 },
 				endpoint: null
 			},
 			{
@@ -132,7 +147,7 @@ return {
 				id: "/(public)/login",
 				pattern: /^\/login\/?$/,
 				params: [],
-				page: { layouts: [0,3,], errors: [1,,], leaf: 18 },
+				page: { layouts: [0,3,], errors: [1,,], leaf: 19 },
 				endpoint: null
 			},
 			{
@@ -146,21 +161,21 @@ return {
 				id: "/(app)/pairs",
 				pattern: /^\/pairs\/?$/,
 				params: [],
-				page: { layouts: [0,2,], errors: [1,,], leaf: 10 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 11 },
 				endpoint: null
 			},
 			{
 				id: "/(app)/pairs/new",
 				pattern: /^\/pairs\/new\/?$/,
 				params: [],
-				page: { layouts: [0,2,], errors: [1,,], leaf: 12 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 13 },
 				endpoint: null
 			},
 			{
 				id: "/(app)/pairs/[id]",
 				pattern: /^\/pairs\/([^/]+?)\/?$/,
 				params: [{"name":"id","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,2,], errors: [1,,], leaf: 11 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 12 },
 				endpoint: null
 			},
 			{
@@ -174,42 +189,42 @@ return {
 				id: "/(app)/repositories",
 				pattern: /^\/repositories\/?$/,
 				params: [],
-				page: { layouts: [0,2,], errors: [1,,], leaf: 13 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 14 },
 				endpoint: null
 			},
 			{
 				id: "/(app)/repositories/[id]",
 				pattern: /^\/repositories\/([^/]+?)\/?$/,
 				params: [{"name":"id","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,2,], errors: [1,,], leaf: 14 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 15 },
 				endpoint: null
 			},
 			{
 				id: "/(app)/runs",
 				pattern: /^\/runs\/?$/,
 				params: [],
-				page: { layouts: [0,2,], errors: [1,,], leaf: 15 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 16 },
 				endpoint: null
 			},
 			{
 				id: "/(app)/runs/[id]",
 				pattern: /^\/runs\/([^/]+?)\/?$/,
 				params: [{"name":"id","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,2,], errors: [1,,], leaf: 16 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 17 },
 				endpoint: null
 			},
 			{
 				id: "/(app)/settings/maintenance",
 				pattern: /^\/settings\/maintenance\/?$/,
 				params: [],
-				page: { layouts: [0,2,], errors: [1,,], leaf: 17 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 18 },
 				endpoint: null
 			},
 			{
 				id: "/(public)/setup",
 				pattern: /^\/setup\/?$/,
 				params: [],
-				page: { layouts: [0,3,], errors: [1,,], leaf: 19 },
+				page: { layouts: [0,3,], errors: [1,,], leaf: 20 },
 				endpoint: null
 			}
 		],

@@ -44,7 +44,7 @@
 			><label class="form-field"
 				><span>Direction</span><select class="select-bordered select" name="direction"
 					><option value="one-way">⇒ One-way Git</option><option value="two-way"
-						>⇄ Two-way Git (preview only until Phase 7)</option
+						>⇄ Two-way Git reconciliation</option
 					></select
 				></label
 			>
@@ -85,6 +85,17 @@
 					name="collisionStrategy"
 					><option value="block">Block and review</option><option value="suffix"
 						>Append a numeric suffix</option
+					></select
+				></label
+			>
+			<label class="form-field"
+				><span>First two-way baseline</span><select
+					class="select-bordered select"
+					name="initialBaselineMode"
+					><option value="require-equality">Require equal refs</option><option value="seed-a-to-b"
+						>Seed Side A to Side B</option
+					><option value="seed-b-to-a">Seed Side B to Side A</option><option value="manual"
+						>Resolve mismatches manually</option
 					></select
 				></label
 			>

@@ -30,6 +30,7 @@ export interface PairValues {
 	schedule: SchedulePolicy;
 	autoProvision: boolean;
 	collisionStrategy: 'block' | 'suffix';
+	initialBaselineMode: import('../domain/types').InitialBaselineMode;
 }
 
 export interface RouteProposal {
@@ -286,7 +287,8 @@ export class PairService {
 						extensions: {
 							...values.selection.extensions,
 							autoProvision: values.autoProvision,
-							collisionStrategy: values.collisionStrategy
+							collisionStrategy: values.collisionStrategy,
+							initialBaselineMode: values.initialBaselineMode
 						}
 					}),
 					JSON.stringify(values.namespace),
@@ -327,7 +329,16 @@ export class PairService {
 				(JSON.parse(String(row.selection_policy_json)) as SelectionPolicy).extensions
 					.collisionStrategy === 'suffix'
 					? 'suffix'
-					: 'block'
+					: 'block',
+			initialBaselineMode: ['require-equality', 'seed-a-to-b', 'seed-b-to-a', 'manual'].includes(
+				String(
+					(JSON.parse(String(row.selection_policy_json)) as SelectionPolicy).extensions
+						.initialBaselineMode
+				)
+			)
+				? ((JSON.parse(String(row.selection_policy_json)) as SelectionPolicy).extensions
+						.initialBaselineMode as import('../domain/types').InitialBaselineMode)
+				: 'require-equality'
 		};
 		const preview = this.preview(ownerId, values);
 		transaction(this.db, () => this.#upsertProposals(ownerId, pairId, values, preview, Date.now()));

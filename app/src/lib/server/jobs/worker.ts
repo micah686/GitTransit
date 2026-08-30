@@ -39,7 +39,8 @@ export async function runWorker(
 		}, LEASE_MS / 3);
 		try {
 			const checkpoint = await handlers.get(claim.name)(claim, signal);
-			if (!queue.checkpoint(claim, checkpoint)) {
+			const durableCheckpoint = { ...claim.checkpoint, ...checkpoint };
+			if (!queue.checkpoint(claim, durableCheckpoint)) {
 				logger.warn({ workerId, stepId: claim.stepId }, 'step lease became stale');
 			} else if (
 				checkpoint.outcome === 'awaiting-approval' &&
@@ -47,6 +48,18 @@ export async function runWorker(
 			) {
 				if (!queue.awaitApproval(claim, checkpoint.approvalId))
 					logger.warn({ workerId, stepId: claim.stepId }, 'approval checkpoint lease became stale');
+			} else if (checkpoint.outcome === 'conflicted' || checkpoint.outcome === 'partial') {
+				const resourceIds = Array.isArray(checkpoint.resourceIds)
+					? checkpoint.resourceIds.filter((value): value is string => typeof value === 'string')
+					: [];
+				if (!queue.terminalOutcome(claim, checkpoint.outcome, resourceIds))
+					logger.warn({ workerId, stepId: claim.stepId }, 'terminal outcome lease became stale');
+			} else if (checkpoint.outcome === 'two-way-verified') {
+				if (!queue.completeTwoWay(claim, durableCheckpoint))
+					logger.warn(
+						{ workerId, stepId: claim.stepId },
+						'two-way baseline finalization lease became stale'
+					);
 			} else if (!queue.complete(claim))
 				logger.warn({ workerId, stepId: claim.stepId }, 'step lease became stale');
 		} catch (error) {
