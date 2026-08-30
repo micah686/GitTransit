@@ -11,6 +11,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
+		"start": "node build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
@@ -20,7 +21,9 @@
 		"test:unit": "vitest run",
 		"test:unit:watch": "vitest",
 		"test": "npm run check && npm run lint && npm run test:unit && npm run test:e2e",
-		"test:e2e": "node scripts/run-playwright.mjs test"
+		"test:e2e": "node scripts/run-playwright.mjs test",
+		"audit": "npm audit --omit=dev --audit-level=high",
+		"size": "du -sh build node_modules"
 	},
 	"devDependencies": {
 		"@eslint/js": "10.0.1",

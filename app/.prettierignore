@@ -10,3 +10,8 @@ gitea-mirror/
 
 # Miscellaneous
 /static/
+/.svelte-kit/
+/build/
+/test-results/
+/playwright-report/
+/node_modules/

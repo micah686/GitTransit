@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run lint
+      - run: npm run test:unit
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --tag gittransit:${{ github.sha }} app
+      - name: Report final image size
+        run: |
+          docker image inspect gittransit:${{ github.sha }} --format='bytes={{.Size}}'
+          docker history gittransit:${{ github.sha }} --no-trunc
+      - name: Scan final image
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: gittransit:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: 1
