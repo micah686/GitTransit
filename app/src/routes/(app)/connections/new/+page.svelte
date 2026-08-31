@@ -102,8 +102,11 @@
 		>
 		<div class="form-actions">
 			<a class="btn btn-ghost" href={resolve('/connections')}>Cancel</a><button
-				class="btn btn-primary"
-				type="submit">Test and create</button
+				class="btn btn-outline"
+				type="submit"
+				formaction="?/create">Create</button
+			><button class="btn btn-primary" type="submit" formaction="?/testAndCreate"
+				>Test and create</button
 			>
 		</div>
 	</form>

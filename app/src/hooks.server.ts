@@ -36,7 +36,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 };
 
 export const handleError: HandleServerError = ({ error, event, status, message }) => {
-	logger.error({ error, requestId: event.locals.requestId, status }, 'request failed');
+	logger.error({ err: error, requestId: event.locals.requestId, status }, 'request failed');
 	return {
 		code: status === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR',
 		message: status === 404 ? message : 'Something went wrong.',

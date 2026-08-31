@@ -10,7 +10,7 @@ return {
 	assets: new Set(["robots.txt"]),
 	mimeTypes: {".txt":"text/plain"},
 	_: {
-		client: {start:"_app/immutable/entry/start.Dr0zeqFY.js",app:"_app/immutable/entry/app.BX1dROU5.js",imports:["_app/immutable/entry/start.Dr0zeqFY.js","_app/immutable/chunks/BcuWcADP.js","_app/immutable/chunks/Clyg6UNk.js","_app/immutable/entry/app.BX1dROU5.js","_app/immutable/chunks/Clyg6UNk.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.CAwhBqid.js",app:"_app/immutable/entry/app.DBWYV0Zm.js",imports:["_app/immutable/entry/start.CAwhBqid.js","_app/immutable/chunks/DbFC-0Rg.js","_app/immutable/chunks/Dh9hcOdo.js","_app/immutable/entry/app.DBWYV0Zm.js","_app/immutable/chunks/Dh9hcOdo.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),

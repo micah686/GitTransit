@@ -11,13 +11,13 @@ test('first admin setup closes and the dashboard is responsive', async ({ page }
 	await page.getByRole('button', { name: 'Create administrator' }).click();
 	await expect(page.getByRole('heading', { name: 'Good to see you' })).toBeVisible();
 	const themeController = page.getByLabel('Theme');
-	await expect(themeController).toHaveValue('dark');
-	await themeController.selectOption('light');
-	await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+	await expect(themeController).toHaveValue('light');
 	await themeController.selectOption('dark');
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+	await themeController.selectOption('light');
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 	await expect(page.locator('.welcome-panel')).toHaveClass(/alert-info/);
-	await expect(page.locator('input[type="checkbox"]')).toHaveCount(0);
+	await expect(page.locator('input[type="checkbox"]:not(.drawer-toggle)')).toHaveCount(0);
 	await page.getByRole('link', { name: 'Connections' }).click();
 	await page.getByRole('link', { name: 'Add connection' }).click();
 	const provider = page.getByLabel('Provider adapter');
@@ -28,6 +28,7 @@ test('first admin setup closes and the dashboard is responsive', async ({ page }
 	await page.getByLabel('Name', { exact: true }).fill('Test Forge');
 	await page.getByLabel('Base URL').fill('https://forge.example.test');
 	await page.locator('input[name="credential"]').fill('browser-secret-token');
+	await expect(page.getByRole('button', { name: 'Create', exact: true })).toBeVisible();
 	await page.getByRole('button', { name: 'Test and create' }).click();
 	await expect(page.getByRole('heading', { name: 'Test Forge' })).toBeVisible();
 	await expect(page.getByText('••••oken')).toBeVisible();

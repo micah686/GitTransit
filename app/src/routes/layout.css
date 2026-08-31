@@ -1,8 +1,8 @@
 @import 'tailwindcss';
 @plugin 'daisyui' {
 	themes:
-		dark --default,
-		light;
+		light --default,
+		dark;
 }
 
 :root {
@@ -14,7 +14,7 @@
 		BlinkMacSystemFont,
 		'Segoe UI',
 		sans-serif;
-	color-scheme: dark;
+	color-scheme: light;
 	--radius-selector: 0.25rem;
 	--radius-field: 0.25rem;
 	--radius-box: 0.25rem;
@@ -121,9 +121,11 @@ input {
 	gap: 1rem;
 }
 .checkbox-field {
-	grid-template-columns: auto 1fr;
+	display: flex;
+	gap: 0.5rem;
 	align-items: center;
-	align-content: end;
+	align-self: start;
+	min-height: var(--size-field);
 }
 .preview-panel,
 .route-list {
@@ -319,24 +321,31 @@ input {
 	color: var(--gt-muted);
 	font-weight: 400;
 }
+.form-field.checkbox-field,
+.checkbox-field {
+	display: flex;
+	align-items: center;
+	align-self: start;
+	gap: 0.5rem;
+	min-height: 1.5rem;
+}
+.checkbox,
+.toggle {
+	flex: 0 0 auto;
+	width: auto;
+	min-width: 1rem;
+	min-height: 1rem;
+}
 .app-shell {
 	min-height: 100vh;
 }
 .sidebar {
-	position: fixed;
-	z-index: 30;
-	inset: 0 auto 0 0;
-	width: min(18rem, 88vw);
 	display: flex;
 	flex-direction: column;
 	padding: 1rem;
-	background: var(--color-neutral);
-	color: var(--color-neutral-content);
-	transform: translateX(-105%);
-	transition: transform 0.18s ease;
-}
-.sidebar.open {
-	transform: translateX(0);
+	box-sizing: border-box;
+	width: 16rem;
+	max-width: 88vw;
 }
 .sidebar-top {
 	display: flex;
@@ -344,23 +353,10 @@ input {
 	align-items: center;
 }
 .sidebar nav {
-	display: grid;
-	gap: 0.2rem;
 	margin-top: 2rem;
 }
-.sidebar nav a {
-	display: flex;
-	align-items: center;
-	gap: 0.8rem;
-	padding: 0.55rem 0.75rem;
-	border-radius: var(--radius-selector);
-	color: color-mix(in oklab, var(--color-neutral-content) 75%, transparent);
-	text-decoration: none;
-	font-weight: 650;
-}
-.sidebar nav a:hover {
-	background: color-mix(in oklab, var(--color-neutral-content) 10%, transparent);
-	color: var(--color-neutral-content);
+.sidebar .menu {
+	width: 100%;
 }
 .sidebar nav a span {
 	width: 1.5rem;
@@ -373,10 +369,10 @@ input {
 	gap: 0.8rem;
 	margin-top: auto;
 	padding-top: 1rem;
-	border-top: 1px solid color-mix(in oklab, var(--color-neutral-content) 15%, transparent);
+	border-top: 1px solid var(--color-base-300);
 }
 .sidebar-footer > small {
-	color: color-mix(in oklab, var(--color-neutral-content) 60%, transparent);
+	color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
 	text-align: center;
 }
 .preference-grid {
@@ -387,15 +383,15 @@ input {
 .preference-grid label {
 	display: grid;
 	gap: 0.25rem;
-	color: color-mix(in oklab, var(--color-neutral-content) 70%, transparent);
+	color: color-mix(in oklab, var(--color-base-content) 70%, transparent);
 	font-size: 0.7rem;
 	font-weight: 700;
 }
 .preference-grid select {
 	width: 100%;
 	min-height: 2.25rem;
-	background: var(--color-neutral);
-	color: var(--color-neutral-content);
+	background: var(--color-base-100);
+	color: var(--color-base-content);
 }
 .user-summary {
 	display: flex;
@@ -413,7 +409,7 @@ input {
 	font-size: 0.83rem;
 }
 .user-summary span {
-	color: color-mix(in oklab, var(--color-neutral-content) 60%, transparent);
+	color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
 	font-size: 0.75rem;
 	text-transform: capitalize;
 }
@@ -456,15 +452,6 @@ input {
 	height: 0.65rem;
 	border-radius: var(--radius-selector);
 	background: var(--color-success);
-}
-.scrim {
-	position: fixed;
-	z-index: 25;
-	inset: 0;
-	width: 100%;
-	height: 100%;
-	border: 0;
-	background: color-mix(in oklab, var(--color-neutral) 75%, transparent);
 }
 .app-main {
 	width: min(100%, 92rem);
@@ -686,13 +673,8 @@ input {
 	.close-menu {
 		display: none;
 	}
-	.sidebar {
-		transform: none;
-		width: 16rem;
-	}
 	.app-main {
 		padding: 2.5rem 3rem;
-		padding-left: calc(16rem + 3rem);
 	}
 }
 @media (prefers-reduced-motion: reduce) {
