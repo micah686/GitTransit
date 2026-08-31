@@ -24,7 +24,7 @@ export class PairRunService {
 	): readonly string[] {
 		const pair = this.db
 			.prepare(
-				`SELECT state,direction,schedule_policy_json,selection_policy_json FROM mirror_pairs WHERE id=? AND user_id=?`
+				`SELECT state,direction,schedule_policy_json,selection_policy_json,metadata_policy_json FROM mirror_pairs WHERE id=? AND user_id=?`
 			)
 			.get(pairId, ownerId) as
 			| {
@@ -32,6 +32,7 @@ export class PairRunService {
 					direction: string;
 					schedule_policy_json: string;
 					selection_policy_json: string;
+					metadata_policy_json: string;
 			  }
 			| undefined;
 		if (!pair) throw new Error('Pair not found.');
@@ -40,6 +41,11 @@ export class PairRunService {
 		const selection = JSON.parse(pair.selection_policy_json) as {
 			extensions?: { autoProvision?: boolean };
 		};
+		const metadata = JSON.parse(pair.metadata_policy_json) as {
+			components: Record<string, 'off' | 'on' | 'required'>;
+		};
+		const metadataEnabled = Object.values(metadata.components).some((mode) => mode !== 'off');
+		const wikiEnabled = metadata.components.wiki !== 'off';
 		const active = (
 			this.db
 				.prepare(
@@ -73,7 +79,13 @@ export class PairRunService {
 						name: pair.direction === 'two-way' ? 'sync-two-way' : 'sync-one-way',
 						routeId: route.id,
 						maxAttempts: policy.retryAttempts
-					}
+					},
+					...(wikiEnabled
+						? [{ name: 'sync-wiki', routeId: route.id, maxAttempts: policy.retryAttempts }]
+						: []),
+					...(metadataEnabled
+						? [{ name: 'sync-metadata', routeId: route.id, maxAttempts: policy.retryAttempts }]
+						: [])
 				]
 			})
 		);

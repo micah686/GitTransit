@@ -1,4 +1,7 @@
 import type { Capability, CapabilitySet } from '$lib/server/domain/types';
+import { createHash } from 'node:crypto';
+import type { MetadataComponent } from '$lib/server/domain/types';
+import type { NormalizedMetadataRecord } from '$lib/server/domain/metadata-contracts';
 import type {
 	AdapterContext,
 	ConnectionProbe,
@@ -15,7 +18,19 @@ const capabilities: CapabilitySet = new Set<Capability>([
 	'repository:read',
 	'repository:create',
 	'git:fetch',
-	'git:push'
+	'git:push',
+	'topics:read',
+	'topics:write',
+	'labels:read',
+	'labels:write',
+	'milestones:read',
+	'milestones:write',
+	'issues:read',
+	'issues:write',
+	'change-requests:read',
+	'change-requests:write',
+	'releases:read',
+	'releases:write'
 ]);
 
 export class FakeProviderAdapter implements ProviderAdapter {
@@ -48,6 +63,71 @@ export class FakeProviderAdapter implements ProviderAdapter {
 			fullPath: path,
 			cloneUrl: `https://fake.invalid/${path}.git`
 		})
+	};
+	readonly #metadataWrites = new Map<string, NormalizedMetadataRecord>();
+	readonly metadata = {
+		supportedComponents: new Set<MetadataComponent>([
+			'topics',
+			'labels',
+			'milestones',
+			'issues',
+			'change-requests',
+			'releases'
+		]),
+		list: async (
+			context: AdapterContext,
+			repository: string,
+			component: MetadataComponent,
+			cursor?: string
+		) => {
+			if (context.signal.aborted) throw context.signal.reason;
+			if (cursor) return { items: [], nextCursor: null };
+			const externalId = `${repository}:${component}:1`;
+			const content = JSON.stringify({ component, repository, title: `Example ${component}` });
+			return {
+				items: [
+					{
+						identity: {
+							provider: this.id,
+							connectionId: context.connectionId,
+							repositoryId: repository,
+							component,
+							externalId
+						},
+						kind: component,
+						title: `Example ${component}`,
+						body: null,
+						state: 'open',
+						sourceUrl: new URL(`https://fake.invalid/${repository}/${component}/1`),
+						sourceAuthorDisplay: 'Fake User',
+						sourceCreatedAt: '2026-01-01T00:00:00.000Z',
+						sourceUpdatedAt: '2026-01-01T00:00:00.000Z',
+						fields: component === 'releases' ? { tag: 'v1.0.0', assets: [] } : {},
+						contentDigest: createHash('sha256').update(content).digest('hex')
+					}
+				],
+				nextCursor: null
+			};
+		},
+		previewLoss: () => ({ unsupportedFields: [], lossyFields: [], warnings: [] }),
+		upsert: async (
+			context: AdapterContext,
+			repository: string,
+			record: NormalizedMetadataRecord,
+			provenance: string,
+			targetExternalId: string | null
+		) => {
+			if (context.signal.aborted) throw context.signal.reason;
+			const id = targetExternalId ?? provenance;
+			this.#metadataWrites.set(id, record);
+			return {
+				targetExternalId: id,
+				targetUrl: new URL(
+					`https://fake.invalid/${repository}/${record.kind}/${encodeURIComponent(id)}`
+				),
+				loss: { unsupportedFields: [], lossyFields: [], warnings: [] }
+			};
+		}
 	};
 
 	async testConnection(context: AdapterContext): Promise<ConnectionProbe> {

@@ -9,6 +9,7 @@ import type {
 	ProviderAdapter,
 	RemoteRepositoryInput
 } from './types';
+import { ForgeMetadataAdapter } from './forge-metadata';
 
 interface BitbucketPage<T> {
 	values: T[];
@@ -109,9 +110,18 @@ export class BitbucketCloudProviderAdapter implements ProviderAdapter {
 		createEmpty: (context: AdapterContext, path: string, idempotencyKey: string) =>
 			this.createEmpty(context, path, idempotencyKey)
 	};
-	readonly metadata = { supportedComponents: new Set(['issues', 'change-requests']) };
+	readonly metadata: ForgeMetadataAdapter;
 
-	constructor(private readonly fetcher: typeof fetch = fetch) {}
+	constructor(private readonly fetcher: typeof fetch = fetch) {
+		this.metadata = new ForgeMetadataAdapter({
+			provider: this.id,
+			dialect: 'bitbucket-cloud',
+			components: ['issues', 'change-requests'],
+			api: (context) => this.#api(context),
+			tokenScheme: 'Bearer',
+			fetcher
+		});
+	}
 
 	#api(context: AdapterContext): URL {
 		if (context.apiUrl) return new URL(context.apiUrl.toString().replace(/\/?$/u, '/'));

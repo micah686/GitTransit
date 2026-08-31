@@ -9,6 +9,7 @@ import type {
 	ProviderAdapter,
 	RemoteRepositoryInput
 } from './types';
+import { ForgeMetadataAdapter } from './forge-metadata';
 
 interface GitLabUser {
 	id: number;
@@ -108,18 +109,18 @@ export class GitLabProviderAdapter implements ProviderAdapter {
 		createEmpty: (context: AdapterContext, path: string, idempotencyKey: string) =>
 			this.createEmpty(context, path, idempotencyKey)
 	};
-	readonly metadata = {
-		supportedComponents: new Set([
-			'topics',
-			'labels',
-			'milestones',
-			'issues',
-			'change-requests',
-			'releases'
-		])
-	};
+	readonly metadata: ForgeMetadataAdapter;
 
-	constructor(private readonly fetcher: typeof fetch = fetch) {}
+	constructor(private readonly fetcher: typeof fetch = fetch) {
+		this.metadata = new ForgeMetadataAdapter({
+			provider: this.id,
+			dialect: 'gitlab',
+			components: ['topics', 'labels', 'milestones', 'issues', 'change-requests', 'releases'],
+			api: (context) => apiBase(context, '/api/v4'),
+			tokenScheme: 'Bearer',
+			fetcher
+		});
+	}
 
 	#client(context: AdapterContext) {
 		return new ProviderHttpClient(context, 'Bearer', this.fetcher);

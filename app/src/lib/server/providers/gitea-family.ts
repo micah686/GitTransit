@@ -9,6 +9,7 @@ import type {
 	ProviderAdapter,
 	RemoteRepositoryInput
 } from './types';
+import { ForgeMetadataAdapter } from './forge-metadata';
 
 interface GiteaUser {
 	id: number;
@@ -106,22 +107,22 @@ export class GiteaFamilyAdapter implements ProviderAdapter {
 		createEmpty: (context: AdapterContext, path: string, idempotencyKey: string) =>
 			this.createEmpty(context, path, idempotencyKey)
 	};
-	readonly metadata = {
-		supportedComponents: new Set([
-			'topics',
-			'labels',
-			'milestones',
-			'issues',
-			'change-requests',
-			'releases'
-		])
-	};
+	readonly metadata: ForgeMetadataAdapter;
 
 	constructor(
 		readonly id: Extract<ProviderId, 'gitea' | 'forgejo'>,
 		private readonly productName: string,
 		private readonly fetcher: typeof fetch = fetch
-	) {}
+	) {
+		this.metadata = new ForgeMetadataAdapter({
+			provider: id,
+			dialect: 'gitea',
+			components: ['topics', 'labels', 'milestones', 'issues', 'change-requests', 'releases'],
+			api: (context) => apiBase(context, '/api/v1'),
+			tokenScheme: 'token',
+			fetcher
+		});
+	}
 
 	#client(context: AdapterContext): ProviderHttpClient {
 		return new ProviderHttpClient(context, 'token', this.fetcher);

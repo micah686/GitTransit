@@ -11,6 +11,7 @@ import {
 	entityId,
 	type ContentPolicy,
 	type ImmutableRefPlan,
+	type MetadataPolicy,
 	type SafetyPolicy
 } from '../domain/types';
 import type { AuthenticatedEndpoint } from '../git/types';
@@ -27,6 +28,9 @@ import {
 	type RefBaseline,
 	type RefName
 } from '../domain/types';
+import { MetadataSyncService, type MetadataSyncCheckpoint } from '../metadata/sync';
+import { providerRegistry } from '../providers/registry';
+import type { AdapterContext, AdapterId, ProviderCredential } from '../providers/types';
 
 export type StepHandler = (
 	claim: StepClaim,
@@ -134,6 +138,7 @@ export function phaseThreeHandlers(db: SqliteDatabase): StepHandlerRegistry {
 			 p.content_policy_json,p.safety_policy_json,
 			 a.fetch_url a_url,b.push_url b_url,a.provider_identity a_identity,b.provider_identity b_identity,
 			 ca.credential_id a_credential_id,cb.credential_id b_credential_id,
+			 cra.kind a_credential_kind,crb.kind b_credential_kind,
 			 cra.encrypted_payload a_encrypted,crb.encrypted_payload b_encrypted
 			 FROM repository_routes r JOIN mirror_pairs p ON p.id=r.pair_id AND p.user_id=r.user_id
 			 JOIN route_endpoints a ON a.route_id=r.id AND a.side='A'
@@ -461,6 +466,217 @@ export function phaseThreeHandlers(db: SqliteDatabase): StepHandlerRegistry {
 					}
 				: {})
 		};
+	});
+	registry.register('sync-metadata', async (claim, signal) => {
+		if (signal.aborted) throw signal.reason;
+		if (!claim.routeId) throw new Error('A metadata step requires a route.');
+		const row = db
+			.prepare(
+				`SELECT p.direction,p.metadata_policy_json,
+			 a.canonical_full_path a_repository,b.canonical_full_path b_repository,
+			 ca.id a_connection_id,ca.provider_id a_provider,ca.base_url a_base_url,ca.api_url a_api_url,
+			 cb.id b_connection_id,cb.provider_id b_provider,cb.base_url b_base_url,cb.api_url b_api_url,
+			 ca.credential_id a_credential_id,cb.credential_id b_credential_id,
+			 cra.encrypted_payload a_encrypted,crb.encrypted_payload b_encrypted
+			 FROM repository_routes r JOIN mirror_pairs p ON p.id=r.pair_id AND p.user_id=r.user_id
+			 JOIN route_endpoints a ON a.route_id=r.id AND a.side='A'
+			 JOIN route_endpoints b ON b.route_id=r.id AND b.side='B'
+			 JOIN connections ca ON ca.id=a.connection_id AND ca.user_id=r.user_id
+			 JOIN connections cb ON cb.id=b.connection_id AND cb.user_id=r.user_id
+			 LEFT JOIN credentials cra ON cra.id=ca.credential_id
+			 LEFT JOIN credentials crb ON crb.id=cb.credential_id
+			 WHERE r.id=? AND r.user_id=?`
+			)
+			.get(claim.routeId, claim.ownerId) as
+			| {
+					direction: 'one-way' | 'two-way';
+					metadata_policy_json: string;
+					a_repository: string;
+					b_repository: string;
+					a_connection_id: string;
+					b_connection_id: string;
+					a_provider: AdapterId;
+					b_provider: AdapterId;
+					a_base_url: string;
+					b_base_url: string;
+					a_api_url: string | null;
+					b_api_url: string | null;
+					a_credential_id: string | null;
+					b_credential_id: string | null;
+					a_credential_kind: string | null;
+					b_credential_kind: string | null;
+					a_encrypted: string | null;
+					b_encrypted: string | null;
+			  }
+			| undefined;
+		if (!row) throw new Error('The metadata route is unavailable.');
+		const policy = JSON.parse(row.metadata_policy_json) as MetadataPolicy;
+		if (row.direction === 'two-way' && policy.authority !== 'A')
+			throw new Error('Two-way Git metadata requires Side A authority.');
+		const source = providerRegistry().get(row.a_provider).metadata;
+		const target = providerRegistry().get(row.b_provider).metadata;
+		if (!source || !target) {
+			const required = Object.entries(policy.components).filter(([, mode]) => mode === 'required');
+			if (required.length)
+				throw new Error('Required metadata is unsupported by this provider pair.');
+			return { processed: 0, written: 0, unchanged: 0, warnings: ['Metadata is unsupported.'] };
+		}
+		const credential = (
+			credentialId: string | null,
+			kind: string | null,
+			encrypted: string | null
+		): ProviderCredential | undefined => {
+			if (
+				!credentialId ||
+				!kind ||
+				!encrypted ||
+				!['token', 'basic', 'app-password'].includes(kind)
+			)
+				return undefined;
+			const decoded = decodeCredentialEnvelope(
+				encryption.decrypt(JSON.parse(encrypted), claim.ownerId, credentialId)
+			);
+			return { kind: kind as ProviderCredential['kind'], ...decoded };
+		};
+		const context = (
+			connectionId: string,
+			baseUrl: string,
+			apiUrl: string | null,
+			value: ProviderCredential | undefined
+		): AdapterContext => ({
+			connectionId,
+			signal,
+			baseUrl: new URL(baseUrl),
+			...(apiUrl ? { apiUrl: new URL(apiUrl) } : {}),
+			...(value ? { credential: value } : {})
+		});
+		const result = await new MetadataSyncService(db).execute({
+			routeId: claim.routeId,
+			sourceRepository: row.a_repository,
+			targetRepository: row.b_repository,
+			sourceConnectionId: row.a_connection_id,
+			targetConnectionId: row.b_connection_id,
+			sourceContext: context(
+				row.a_connection_id,
+				row.a_base_url,
+				row.a_api_url,
+				credential(row.a_credential_id, row.a_credential_kind, row.a_encrypted)
+			),
+			targetContext: context(
+				row.b_connection_id,
+				row.b_base_url,
+				row.b_api_url,
+				credential(row.b_credential_id, row.b_credential_kind, row.b_encrypted)
+			),
+			source,
+			target,
+			components: { ...policy.components, wiki: 'off' },
+			checkpoint: claim.checkpoint as MetadataSyncCheckpoint,
+			saveCheckpoint: (checkpoint) => {
+				if (!claimIsCurrent(db, claim)) throw new Error('Metadata lease became stale.');
+				db.prepare(
+					`UPDATE run_steps SET checkpoint_json=?,heartbeat_at=? WHERE id=? AND state='running'
+				 AND lease_owner=? AND fencing_token=?`
+				).run(
+					JSON.stringify({ ...claim.checkpoint, ...checkpoint }),
+					Date.now(),
+					claim.stepId,
+					claim.workerId,
+					claim.fencingToken
+				);
+			},
+			releaseTagExists: (tag) =>
+				Boolean(
+					db
+						.prepare(
+							`SELECT 1 FROM ref_observations WHERE route_id=? AND side='B' AND ref_name=?
+						 ORDER BY observed_at DESC LIMIT 1`
+						)
+						.get(claim.routeId, `refs/tags/${tag}`)
+				)
+		});
+		return { ...result };
+	});
+	registry.register('sync-wiki', async (claim, signal) => {
+		if (signal.aborted) throw signal.reason;
+		if (!claim.routeId) throw new Error('A wiki step requires a route.');
+		const row = db
+			.prepare(
+				`SELECT p.metadata_policy_json,p.safety_policy_json,
+			 a.fetch_url a_url,b.push_url b_url,a.provider_identity a_identity,b.provider_identity b_identity,
+			 ca.credential_id a_credential_id,cb.credential_id b_credential_id,
+			 cra.encrypted_payload a_encrypted,crb.encrypted_payload b_encrypted
+			 FROM repository_routes r JOIN mirror_pairs p ON p.id=r.pair_id AND p.user_id=r.user_id
+			 JOIN route_endpoints a ON a.route_id=r.id AND a.side='A'
+			 JOIN route_endpoints b ON b.route_id=r.id AND b.side='B'
+			 JOIN connections ca ON ca.id=a.connection_id JOIN connections cb ON cb.id=b.connection_id
+			 LEFT JOIN credentials cra ON cra.id=ca.credential_id LEFT JOIN credentials crb ON crb.id=cb.credential_id
+			 WHERE r.id=? AND r.user_id=?`
+			)
+			.get(claim.routeId, claim.ownerId) as
+			| (Omit<
+					SyncRouteRow,
+					'route_id' | 'pair_version' | 'route_generation' | 'content_policy_json'
+			  > & {
+					metadata_policy_json: string;
+			  })
+			| undefined;
+		if (!row) throw new Error('The wiki route is unavailable.');
+		const mode = (JSON.parse(row.metadata_policy_json) as MetadataPolicy).components.wiki;
+		if (mode === 'off') return { skipped: true };
+		const wikiUrl = (value: string) => {
+			const url = new URL(value);
+			url.pathname = `${url.pathname.replace(/\.git$/u, '')}.wiki.git`;
+			return url;
+		};
+		const endpoint = (
+			value: string,
+			identity: string | null,
+			credentialId: string | null,
+			encrypted: string | null
+		): AuthenticatedEndpoint => {
+			const url = wikiUrl(value);
+			const decoded =
+				credentialId && encrypted
+					? decodeCredentialEnvelope(
+							encryption.decrypt(JSON.parse(encrypted), claim.ownerId, credentialId)
+						)
+					: null;
+			return {
+				url,
+				credentialId,
+				stableIdentity: `${identity ?? value}:wiki`,
+				...(decoded && ['http:', 'https:'].includes(url.protocol)
+					? {
+							credential: {
+								kind: 'https' as const,
+								username: decoded.username ?? 'git',
+								password: decoded.secret
+							}
+						}
+					: {})
+			};
+		};
+		try {
+			const result = await executeOneWay(transport, {
+				routeId: entityId(`${claim.routeId}:wiki`),
+				runId: claim.runId,
+				endpointA: endpoint(row.a_url, row.a_identity, row.a_credential_id, row.a_encrypted),
+				endpointB: endpoint(row.b_url, row.b_identity, row.b_credential_id, row.b_encrypted),
+				refs: { includes: ['refs/heads/*'], excludes: [], targetOnly: 'preserve' },
+				safety: JSON.parse(row.safety_policy_json) as SafetyPolicy,
+				lfs: 'off',
+				capabilityGeneration: 1,
+				policyGeneration: 1,
+				assertLeaseCurrent: () => claimIsCurrent(db, claim)
+			});
+			if (result.state !== 'succeeded')
+				throw new Error(`Wiki synchronization stopped: ${result.state}.`);
+			return { state: 'wiki-verified', actionCount: result.plan.actions.length };
+		} catch (error) {
+			if (mode === 'required') throw error;
+			return { warning: error instanceof Error ? error.message : 'Wiki synchronization failed.' };
+		}
 	});
 	return registry;
 }

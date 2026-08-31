@@ -1,6 +1,7 @@
 import { JobQueue } from './queue';
 import type { StepHandlerRegistry } from './handlers';
 import { createLogger } from '$lib/server/logging';
+import { ProviderOperationError } from '$lib/server/providers/types';
 
 const LEASE_MS = 30_000;
 const IDLE_MS = 1_000;
@@ -64,7 +65,17 @@ export async function runWorker(
 				logger.warn({ workerId, stepId: claim.stepId }, 'step lease became stale');
 		} catch (error) {
 			logger.error({ workerId, stepId: claim.stepId, error }, 'step failed');
-			queue.failOrRetry(claim, 'STEP_FAILED', Math.min(60_000, 1_000 * 2 ** claim.attempt));
+			const providerDelay =
+				error instanceof ProviderOperationError && error.retryAt
+					? Math.max(1_000, error.retryAt - Date.now())
+					: null;
+			queue.failOrRetry(
+				claim,
+				error instanceof ProviderOperationError && error.kind === 'rate-limited'
+					? 'RATE_LIMITED'
+					: 'STEP_FAILED',
+				providerDelay ?? Math.min(60_000, 1_000 * 2 ** claim.attempt)
+			);
 		} finally {
 			clearInterval(heartbeat);
 		}

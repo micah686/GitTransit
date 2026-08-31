@@ -39,3 +39,34 @@
 			>
 		</article>{/each}
 </section>
+<section class="route-list" aria-labelledby="metadata-title">
+	<h2 id="metadata-title">One-way forge metadata</h2>
+	<p class="lede">
+		Authority: {data.metadata.policy.authority ?? 'Side A for one-way pairs'}. Metadata never flows
+		from Side B.
+	</p>
+	{#each Object.entries(data.metadata.policy.components) as [component, mode] (component)}
+		{#if mode !== 'off'}
+			{@const status = data.metadata.mappings.find((item) => item.component === component)}
+			<article>
+				<div>
+					<strong>{component}</strong><small
+						>{status
+							? `${status.itemCount} mapped · last synced ${new Date(status.lastSyncedAt).toLocaleString()}`
+							: 'Enabled; no successful item mappings yet'}</small
+					>
+				</div>
+				<span class="badge">{mode}</span>
+			</article>
+		{/if}
+	{/each}
+	{#if data.metadata.rateLimits.length}
+		<h3>Provider rate budgets</h3>
+		{#each data.metadata.rateLimits as limit (`${limit.category}:${limit.resetAt}`)}
+			<p>
+				<code>{limit.category}</code>: {limit.remaining ?? 'unknown'} / {limit.limitValue ??
+					'unknown'} remaining
+			</p>
+		{/each}
+	{/if}
+</section>

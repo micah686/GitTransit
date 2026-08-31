@@ -102,6 +102,76 @@
 		</div>
 		<div class="wizard-step">
 			<span>3</span>
+			<h2>Forge metadata</h2>
+		</div>
+		<p class="lede">
+			Metadata always flows from Side A to Side B. Required components fail the run; optional
+			components report warnings.
+		</p>
+		<div class="route-grid">
+			<label class="form-field"
+				><span>Topics</span><select class="select-bordered select" name="metadataTopics"
+					><option value="off">Off</option><option value="on">On</option><option value="required"
+						>Required</option
+					></select
+				></label
+			>
+			<label class="form-field"
+				><span>Labels</span><select class="select-bordered select" name="metadataLabels"
+					><option value="off">Off</option><option value="on">On</option><option value="required"
+						>Required</option
+					></select
+				></label
+			>
+			<label class="form-field"
+				><span>Milestones</span><select class="select-bordered select" name="metadataMilestones"
+					><option value="off">Off</option><option value="on">On</option><option value="required"
+						>Required</option
+					></select
+				></label
+			>
+			<label class="form-field"
+				><span>Issues and comments</span><select
+					class="select-bordered select"
+					name="metadataIssues"
+					><option value="off">Off</option><option value="on">On</option><option value="required"
+						>Required</option
+					></select
+				></label
+			>
+			<label class="form-field"
+				><span>Archived change requests</span><select
+					class="select-bordered select"
+					name="metadataChangeRequests"
+					><option value="off">Off</option><option value="on">On</option><option value="required"
+						>Required</option
+					></select
+				></label
+			>
+			<label class="form-field"
+				><span>Releases and assets</span><select
+					class="select-bordered select"
+					name="metadataReleases"
+					><option value="off">Off</option><option value="on">On</option><option value="required"
+						>Required</option
+					></select
+				></label
+			>
+			<label class="form-field"
+				><span>Wiki</span><select class="select-bordered select" name="metadataWiki"
+					><option value="off">Off</option><option value="on">On</option><option value="required"
+						>Required</option
+					></select
+				></label
+			>
+			<label class="form-field checkbox-field"
+				><input type="checkbox" class="checkbox" name="metadataAuthority" value="A" /><span
+					>Side A is metadata authority (required for two-way Git)</span
+				></label
+			>
+		</div>
+		<div class="wizard-step">
+			<span>4</span>
 			<h2>Content, safety, and schedule</h2>
 		</div>
 		<div class="route-grid">

@@ -1,4 +1,10 @@
-import type { CapabilitySet, ProviderId } from '../domain/types';
+import type { CapabilitySet, MetadataComponent, ProviderId } from '../domain/types';
+import type {
+	MetadataLossReport,
+	MetadataWriteResult,
+	NormalizedMetadataRecord,
+	RateLimitObservation
+} from '../domain/metadata-contracts';
 
 export type AdapterId = ProviderId | 'fake';
 
@@ -99,6 +105,24 @@ export interface GitEndpointSet {
 
 export interface MetadataAdapter {
 	readonly supportedComponents: ReadonlySet<string>;
+	list?(
+		context: AdapterContext,
+		repository: string,
+		component: MetadataComponent,
+		cursor?: string
+	): Promise<{
+		readonly items: readonly NormalizedMetadataRecord[];
+		readonly nextCursor: string | null;
+		readonly rateLimit?: RateLimitObservation;
+	}>;
+	previewLoss?(component: MetadataComponent, record: NormalizedMetadataRecord): MetadataLossReport;
+	upsert?(
+		context: AdapterContext,
+		repository: string,
+		record: NormalizedMetadataRecord,
+		provenance: string,
+		targetExternalId: string | null
+	): Promise<MetadataWriteResult & { readonly rateLimit?: RateLimitObservation }>;
 }
 
 export interface ProviderAdapter {

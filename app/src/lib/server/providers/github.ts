@@ -9,6 +9,7 @@ import type {
 	ProviderAdapter,
 	RemoteRepositoryInput
 } from './types';
+import { ForgeMetadataAdapter } from './forge-metadata';
 
 interface GitHubUser {
 	id: number;
@@ -100,18 +101,18 @@ export class GitHubProviderAdapter implements ProviderAdapter {
 		createEmpty: (context: AdapterContext, path: string, idempotencyKey: string) =>
 			this.createEmpty(context, path, idempotencyKey)
 	};
-	readonly metadata = {
-		supportedComponents: new Set([
-			'topics',
-			'labels',
-			'milestones',
-			'issues',
-			'change-requests',
-			'releases'
-		])
-	};
+	readonly metadata: ForgeMetadataAdapter;
 
-	constructor(private readonly fetcher: typeof fetch = fetch) {}
+	constructor(private readonly fetcher: typeof fetch = fetch) {
+		this.metadata = new ForgeMetadataAdapter({
+			provider: this.id,
+			dialect: 'github',
+			components: ['topics', 'labels', 'milestones', 'issues', 'change-requests', 'releases'],
+			api: (context) => this.#api(context),
+			tokenScheme: 'Bearer',
+			fetcher
+		});
+	}
 
 	#api(context: AdapterContext): URL {
 		if (context.apiUrl) return new URL(context.apiUrl.toString().replace(/\/?$/u, '/'));

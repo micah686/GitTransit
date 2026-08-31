@@ -47,7 +47,7 @@ export class ProviderHttpClient {
 	async json<T>(
 		url: URL,
 		options: {
-			method?: 'GET' | 'POST';
+			method?: 'GET' | 'POST' | 'PUT' | 'PATCH';
 			body?: Readonly<Record<string, unknown>>;
 			headers?: Readonly<Record<string, string>>;
 			allowNotFound?: boolean;

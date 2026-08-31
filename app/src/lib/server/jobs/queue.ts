@@ -183,14 +183,26 @@ export class JobQueue {
 
 	checkpoint(claim: StepClaim, value: Readonly<Record<string, unknown>>): boolean {
 		const now = databaseNow(this.db);
+		const warnings = Array.isArray(value.warnings)
+			? value.warnings.filter((item): item is string => typeof item === 'string')
+			: typeof value.warning === 'string'
+				? [value.warning]
+				: [];
 		return (
 			this.db
 				.prepare(
-					`UPDATE run_steps SET checkpoint_json=?,heartbeat_at=? WHERE id=? AND state='running'
+					`UPDATE run_steps SET checkpoint_json=?,warning_json=?,heartbeat_at=? WHERE id=? AND state='running'
 		 AND lease_owner=? AND fencing_token=? AND lease_expires_at>?`
 				)
-				.run(JSON.stringify(value), now, claim.stepId, claim.workerId, claim.fencingToken, now)
-				.changes === 1
+				.run(
+					JSON.stringify(value),
+					warnings.length ? JSON.stringify(warnings) : null,
+					now,
+					claim.stepId,
+					claim.workerId,
+					claim.fencingToken,
+					now
+				).changes === 1
 		);
 	}
 
@@ -445,13 +457,36 @@ export class JobQueue {
 				this.db
 					.prepare("UPDATE runs SET state='succeeded',completed_at=? WHERE id=?")
 					.run(now, claim.runId);
-				if (claim.name === 'sync-one-way' && claim.routeId)
+				if (
+					(claim.name === 'sync-one-way' ||
+						claim.name === 'sync-wiki' ||
+						claim.name === 'sync-metadata') &&
+					claim.routeId
+				) {
+					const warningRows = this.db
+						.prepare(
+							`SELECT warning_json FROM run_steps WHERE run_id=? AND warning_json IS NOT NULL`
+						)
+						.all(claim.runId) as Array<{ warning_json: string }>;
+					const warnings = warningRows.flatMap((row) => {
+						const parsed = JSON.parse(row.warning_json) as unknown;
+						return Array.isArray(parsed)
+							? parsed.filter((item): item is string => typeof item === 'string')
+							: [];
+					});
 					this.db
 						.prepare(
 							`UPDATE repository_routes SET status='synced',last_successful_run_id=?,
-						 safe_error_code=NULL,updated_at=? WHERE id=? AND user_id=?`
+						 safe_error_code=NULL,warning_summary=?,updated_at=? WHERE id=? AND user_id=?`
 						)
-						.run(claim.runId, now, claim.routeId, claim.ownerId);
+						.run(
+							claim.runId,
+							warnings.length ? [...new Set(warnings)].join(' ') : null,
+							now,
+							claim.routeId,
+							claim.ownerId
+						);
+				}
 				appendEvent(
 					this.db,
 					claim.ownerId,
@@ -509,6 +544,21 @@ export class JobQueue {
 			this.db
 				.prepare("UPDATE runs SET state='failed',completed_at=?,safe_error_code=? WHERE id=?")
 				.run(now, errorCode, claim.runId);
+			if (claim.routeId)
+				this.db
+					.prepare(
+						`UPDATE repository_routes SET status='failed',safe_error_code=?,
+					 warning_summary=?,updated_at=? WHERE id=? AND user_id=?`
+					)
+					.run(
+						errorCode,
+						claim.name === 'sync-metadata' || claim.name === 'sync-wiki'
+							? 'A required metadata component failed after Git synchronization.'
+							: 'Synchronization failed.',
+						now,
+						claim.routeId,
+						claim.ownerId
+					);
 			appendEvent(
 				this.db,
 				claim.ownerId,

@@ -4,9 +4,11 @@ import type { SqliteDatabase } from '../persistence/database';
 import { database, transaction } from '../persistence/database';
 import { ConnectionRepository, type SafeConnection } from '../persistence/repositories/connections';
 import { globMatches, resolveTargetNamespace } from '../domain/mapping';
+import { validateMetadataPolicy } from '../domain/metadata-policy';
 import type {
 	Capability,
 	ContentPolicy,
+	MetadataPolicy,
 	NamespacePolicy,
 	SafetyPolicy,
 	SchedulePolicy,
@@ -31,6 +33,7 @@ export interface PairValues {
 	autoProvision: boolean;
 	collisionStrategy: 'block' | 'suffix';
 	initialBaselineMode: import('../domain/types').InitialBaselineMode;
+	metadata?: MetadataPolicy;
 }
 
 export interface RouteProposal {
@@ -187,12 +190,22 @@ export class PairService {
 		const bCaps = new Set(b.capabilities as Capability[]);
 		const negotiated = [...aCaps].filter((capability) => bCaps.has(capability));
 		const warnings: string[] = [];
-		if (!aCaps.has('git:fetch')) warnings.push('Side A cannot fetch Git content.');
-		if (!bCaps.has('git:push')) warnings.push('Side B cannot push Git content.');
+		const blocking: string[] = [];
+		if (!aCaps.has('git:fetch')) blocking.push('Side A cannot fetch Git content.');
+		if (!bCaps.has('git:push')) blocking.push('Side B cannot push Git content.');
 		if (values.direction === 'two-way' && (!aCaps.has('git:push') || !bCaps.has('git:fetch')))
-			warnings.push('Two-way Git requires fetch and push on both connections.');
+			blocking.push('Two-way Git requires fetch and push on both connections.');
 		if (values.content.lfs === 'on' && (!aCaps.has('lfs:fetch') || !bCaps.has('lfs:push')))
-			warnings.push('Required LFS transfer is unsupported by these credentials.');
+			blocking.push('Required LFS transfer is unsupported by these credentials.');
+		const metadata = validateMetadataPolicy(
+			values.direction,
+			values.metadata ?? defaultMetadata,
+			aCaps,
+			bCaps
+		);
+		warnings.push(...metadata.warnings);
+		blocking.push(...metadata.errors);
+		warnings.push(...blocking);
 		const rows = this.db
 			.prepare(
 				`SELECT id,external_id,full_path,normalized_full_path,name,fetch_url,push_url,
@@ -254,7 +267,7 @@ export class PairService {
 		});
 		return {
 			capabilities: negotiated,
-			valid: warnings.length === 0 && !proposals.some((item) => item.action === 'collision'),
+			valid: blocking.length === 0 && !proposals.some((item) => item.action === 'collision'),
 			warnings,
 			proposals,
 			selectedCount: chosen.length,
@@ -293,7 +306,7 @@ export class PairService {
 					}),
 					JSON.stringify(values.namespace),
 					JSON.stringify(values.content),
-					JSON.stringify(defaultMetadata),
+					JSON.stringify(values.metadata ?? defaultMetadata),
 					JSON.stringify(values.safety),
 					JSON.stringify(values.schedule),
 					JSON.stringify({ capabilities: preview.capabilities, observedAt: now }),
@@ -338,7 +351,8 @@ export class PairService {
 			)
 				? ((JSON.parse(String(row.selection_policy_json)) as SelectionPolicy).extensions
 						.initialBaselineMode as import('../domain/types').InitialBaselineMode)
-				: 'require-equality'
+				: 'require-equality',
+			metadata: JSON.parse(String(row.metadata_policy_json)) as MetadataPolicy
 		};
 		const preview = this.preview(ownerId, values);
 		transaction(this.db, () => this.#upsertProposals(ownerId, pairId, values, preview, Date.now()));

@@ -69,7 +69,21 @@ function input(form: FormData): PairValues {
 		) as PairValues['collisionStrategy'],
 		initialBaselineMode: String(
 			form.get('initialBaselineMode') ?? 'require-equality'
-		) as PairValues['initialBaselineMode']
+		) as PairValues['initialBaselineMode'],
+		metadata: {
+			authority: form.get('metadataAuthority') === 'A' ? 'A' : null,
+			components: {
+				topics: String(form.get('metadataTopics') ?? 'off') as 'off' | 'on' | 'required',
+				labels: String(form.get('metadataLabels') ?? 'off') as 'off' | 'on' | 'required',
+				milestones: String(form.get('metadataMilestones') ?? 'off') as 'off' | 'on' | 'required',
+				issues: String(form.get('metadataIssues') ?? 'off') as 'off' | 'on' | 'required',
+				'change-requests': String(form.get('metadataChangeRequests') ?? 'off') as
+					'off' | 'on' | 'required',
+				releases: String(form.get('metadataReleases') ?? 'off') as 'off' | 'on' | 'required',
+				wiki: String(form.get('metadataWiki') ?? 'off') as 'off' | 'on' | 'required'
+			},
+			changeRequests: form.get('metadataChangeRequests') === 'off' ? 'off' : 'archive-as-issue'
+		}
 	};
 }
 function validate(value: PairValues): void {
@@ -85,6 +99,9 @@ function validate(value: PairValues): void {
 		) ||
 		!['require-equality', 'seed-a-to-b', 'seed-b-to-a', 'manual'].includes(
 			value.initialBaselineMode
+		) ||
+		Object.values(value.metadata?.components ?? {}).some(
+			(mode) => !['off', 'on', 'required'].includes(mode)
 		)
 	)
 		throw new Error('Choose valid pair and scheduling options.');
