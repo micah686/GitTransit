@@ -537,6 +537,25 @@
       "_server.js"
     ]
   },
+  "src/routes/(app)/settings/notifications/+page.server.ts": {
+    "file": "entries/pages/(app)/settings/notifications/_page.server.ts.js",
+    "name": "entries/pages/(app)/settings/notifications/_page.server.ts",
+    "src": "src/routes/(app)/settings/notifications/+page.server.ts",
+    "isEntry": true,
+    "imports": [
+      "_database.js",
+      "_credentials.js"
+    ]
+  },
+  "src/routes/(app)/settings/notifications/+page.svelte": {
+    "file": "entries/pages/(app)/settings/notifications/_page.svelte.js",
+    "name": "entries/pages/(app)/settings/notifications/_page.svelte",
+    "src": "src/routes/(app)/settings/notifications/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_server.js"
+    ]
+  },
   "src/routes/(public)/+layout.svelte": {
     "file": "entries/pages/(public)/_layout.svelte.js",
     "name": "entries/pages/(public)/_layout.svelte",
@@ -602,7 +621,7 @@
       "_server.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.BPxuWKi5.css"
+      "_app/immutable/assets/_layout.Cz21bWBu.css"
     ]
   },
   "src/routes/api/v1/approvals/[id]/+server.ts": {

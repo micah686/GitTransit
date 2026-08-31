@@ -10,7 +10,7 @@ return {
 	assets: new Set(["robots.txt"]),
 	mimeTypes: {".txt":"text/plain"},
 	_: {
-		client: {start:"_app/immutable/entry/start.AiY6VNUE.js",app:"_app/immutable/entry/app.DsWsmdDi.js",imports:["_app/immutable/entry/start.AiY6VNUE.js","_app/immutable/chunks/Dca1uf2f.js","_app/immutable/chunks/Clyg6UNk.js","_app/immutable/entry/app.DsWsmdDi.js","_app/immutable/chunks/Clyg6UNk.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.BazUOiCf.js",app:"_app/immutable/entry/app.CRFcEqoB.js",imports:["_app/immutable/entry/start.BazUOiCf.js","_app/immutable/chunks/ziuCmheh.js","_app/immutable/chunks/Clyg6UNk.js","_app/immutable/entry/app.CRFcEqoB.js","_app/immutable/chunks/Clyg6UNk.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),
@@ -32,7 +32,8 @@ return {
 			__memo(() => import('./nodes/17.js')),
 			__memo(() => import('./nodes/18.js')),
 			__memo(() => import('./nodes/19.js')),
-			__memo(() => import('./nodes/20.js'))
+			__memo(() => import('./nodes/20.js')),
+			__memo(() => import('./nodes/21.js'))
 		],
 		remotes: {
 			
@@ -147,7 +148,7 @@ return {
 				id: "/(public)/login",
 				pattern: /^\/login\/?$/,
 				params: [],
-				page: { layouts: [0,3,], errors: [1,,], leaf: 19 },
+				page: { layouts: [0,3,], errors: [1,,], leaf: 20 },
 				endpoint: null
 			},
 			{
@@ -221,10 +222,17 @@ return {
 				endpoint: null
 			},
 			{
+				id: "/(app)/settings/notifications",
+				pattern: /^\/settings\/notifications\/?$/,
+				params: [],
+				page: { layouts: [0,2,], errors: [1,,], leaf: 19 },
+				endpoint: null
+			},
+			{
 				id: "/(public)/setup",
 				pattern: /^\/setup\/?$/,
 				params: [],
-				page: { layouts: [0,3,], errors: [1,,], leaf: 20 },
+				page: { layouts: [0,3,], errors: [1,,], leaf: 21 },
 				endpoint: null
 			}
 		],

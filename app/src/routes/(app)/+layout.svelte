@@ -73,9 +73,13 @@
 			<a href={resolve('/approvals')} onclick={() => (menuOpen = false)}
 				><span aria-hidden="true">✓</span>Approvals</a
 			>
-			<a href={resolve('/settings/maintenance')} onclick={() => (menuOpen = false)}
-				><span aria-hidden="true">⚙</span>Maintenance</a
+			<a href={resolve('/settings/notifications')} onclick={() => (menuOpen = false)}
+				><span aria-hidden="true">◌</span>Notifications</a
 			>
+			{#if data.user.role === 'admin'}<a
+					href={resolve('/settings/maintenance')}
+					onclick={() => (menuOpen = false)}><span aria-hidden="true">⚙</span>Maintenance</a
+				>{/if}
 		</nav>
 		<div class="sidebar-footer">
 			<div class="preference-grid">

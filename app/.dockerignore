@@ -2,9 +2,13 @@ node_modules
 .svelte-kit
 build
 worker-build
+.gittransit
 test-results
 playwright-report
-.gittransit
+*.log
+**/*.spec.ts
+**/*.test.ts
+**/*.e2e.ts
 .env*
 Dockerfile*
 README.md

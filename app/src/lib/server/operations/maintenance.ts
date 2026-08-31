@@ -12,10 +12,39 @@ export interface CleanupResult {
 	artifacts: number;
 	artifactBytes: number;
 	temporaryFiles: number;
+	notificationDeliveries: number;
 	dryRun: boolean;
 }
 export class MaintenanceService {
 	constructor(private readonly db: SqliteDatabase) {}
+	history(ownerId: string): readonly {
+		id: string;
+		kind: string;
+		dryRun: boolean;
+		result: CleanupResult;
+		createdAt: number;
+	}[] {
+		return (
+			this.db
+				.prepare(
+					`SELECT id,kind,dry_run,result_json,created_at FROM maintenance_runs
+				 WHERE user_id=? ORDER BY created_at DESC LIMIT 20`
+				)
+				.all(ownerId) as Array<{
+				id: string;
+				kind: string;
+				dry_run: number;
+				result_json: string;
+				created_at: number;
+			}>
+		).map((row) => ({
+			id: row.id,
+			kind: row.kind,
+			dryRun: row.dry_run === 1,
+			result: JSON.parse(row.result_json) as CleanupResult,
+			createdAt: row.created_at
+		}));
+	}
 	async cleanup(
 		ownerId: string,
 		options: {
@@ -49,6 +78,14 @@ export class MaintenanceService {
 				)
 				.get(ownerId, runBefore) as { count: number }
 		).count;
+		const notificationDeliveries = (
+			this.db
+				.prepare(
+					`SELECT COUNT(*) count FROM notification_deliveries
+				 WHERE user_id=? AND state IN ('delivered','failed') AND updated_at<?`
+				)
+				.get(ownerId, runBefore) as { count: number }
+		).count;
 		const artifacts = this.db
 			.prepare(
 				`SELECT id,relative_path,byte_size FROM (SELECT a.*,ROW_NUMBER() OVER(PARTITION BY route_id ORDER BY created_at DESC) position FROM backup_artifacts a WHERE user_id=? AND verification_status='verified') WHERE position>? AND (created_at<? OR expires_at<?)`
@@ -65,11 +102,18 @@ export class MaintenanceService {
 			artifacts: artifacts.length,
 			artifactBytes: artifacts.reduce((sum, item) => sum + item.byte_size, 0),
 			temporaryFiles: 0,
+			notificationDeliveries,
 			dryRun: options.dryRun
 		};
 		if (!options.dryRun) {
 			transaction(this.db, () => {
 				this.db.prepare('DELETE FROM events WHERE user_id=? AND expires_at<?').run(ownerId, now);
+				this.db
+					.prepare(
+						`DELETE FROM notification_deliveries WHERE user_id=?
+					 AND state IN ('delivered','failed') AND updated_at<?`
+					)
+					.run(ownerId, runBefore);
 				this.db
 					.prepare(
 						`DELETE FROM ref_observations WHERE run_id IN (SELECT id FROM runs WHERE user_id=? AND completed_at<?) AND run_id NOT IN (SELECT run_id FROM conflicts WHERE state='open')`
@@ -91,7 +135,12 @@ export class MaintenanceService {
 					.run(randomUUID(), ownerId, 'retention', 0, JSON.stringify(result), now);
 			});
 			for (const artifact of artifacts) await this.#deleteArtifact(artifact.relative_path);
-		}
+		} else
+			this.db
+				.prepare(
+					'INSERT INTO maintenance_runs(id,user_id,kind,dry_run,result_json,created_at) VALUES(?,?,?,?,?,?)'
+				)
+				.run(randomUUID(), ownerId, 'retention', 1, JSON.stringify(result), now);
 		return result;
 	}
 	async cleanupTemporaryArtifacts(now = Date.now()): Promise<number> {

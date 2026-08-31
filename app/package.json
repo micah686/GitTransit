@@ -23,6 +23,8 @@
 		"test:unit:watch": "vitest",
 		"test": "npm run check && npm run lint && npm run test:unit && npm run test:e2e",
 		"test:e2e": "node scripts/run-playwright.mjs test",
+		"test:providers": "GITTRANSIT_PROVIDER_SMOKE=1 vitest run src/lib/server/providers/provider-smoke.opt-in.spec.ts",
+		"provenance": "node scripts/release-manifest.mjs",
 		"audit": "npm audit --omit=dev --audit-level=high",
 		"size": "du -sh build node_modules"
 	},

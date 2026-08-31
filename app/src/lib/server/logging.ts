@@ -1,7 +1,10 @@
 import pino from 'pino';
 
-export function createLogger(service: 'gittransit-web' | 'gittransit-worker') {
-	return pino({
+export function createLogger(
+	service: 'gittransit-web' | 'gittransit-worker',
+	destination?: pino.DestinationStream
+) {
+	const options: pino.LoggerOptions = {
 		level: process.env.GITTRANSIT_LOG_LEVEL ?? 'info',
 		base: { service },
 		redact: {
@@ -9,13 +12,22 @@ export function createLogger(service: 'gittransit-web' | 'gittransit-worker') {
 				'req.headers.authorization',
 				'req.headers.cookie',
 				'password',
+				'*.password',
 				'token',
+				'*.token',
 				'credential',
-				'privateKey'
+				'*.credential',
+				'secret',
+				'*.secret',
+				'privateKey',
+				'*.privateKey',
+				'encrypted_config',
+				'*.encrypted_config'
 			],
 			censor: '[REDACTED]'
 		}
-	});
+	};
+	return destination ? pino(options, destination) : pino(options);
 }
 
 export const logger = createLogger('gittransit-web');

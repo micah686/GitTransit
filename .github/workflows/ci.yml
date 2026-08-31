@@ -31,15 +31,43 @@ jobs:
 
   image:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v4
       - run: docker build --tag gittransit:${{ github.sha }} app
       - name: Report final image size
         run: |
-          docker image inspect gittransit:${{ github.sha }} --format='bytes={{.Size}}'
+          size=$(docker image inspect gittransit:${{ github.sha }} --format='{{.Size}}')
+          echo "bytes=$size"
+          test "$size" -le 419430400
           docker history gittransit:${{ github.sha }} --no-trunc
+      - name: Export release image
+        run: docker save gittransit:${{ github.sha }} | gzip -9 > gittransit-image.tar.gz
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          image: gittransit:${{ github.sha }}
+          format: spdx-json
+          output-file: gittransit.spdx.json
+      - name: Generate build manifest
+        working-directory: app
+        run: npm run provenance > ../gittransit-provenance.json
+      - name: Attest image archive
+        if: github.event_name != 'pull_request'
+        uses: actions/attest@v4
+        with:
+          subject-path: gittransit-image.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-evidence-${{ github.sha }}
+          path: |
+            gittransit.spdx.json
+            gittransit-provenance.json
       - name: Scan final image
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: gittransit:${{ github.sha }}
           severity: HIGH,CRITICAL

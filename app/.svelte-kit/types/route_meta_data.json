@@ -116,6 +116,11 @@
 		"src/routes/(app)/+layout.server.ts",
 		"src/routes/+layout.server.ts"
 	],
+	"/(app)/settings/notifications": [
+		"src/routes/(app)/settings/notifications/+page.server.ts",
+		"src/routes/(app)/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
 	"/(public)/setup": [
 		"src/routes/(public)/setup/+page.server.ts",
 		"src/routes/+layout.server.ts"

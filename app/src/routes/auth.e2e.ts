@@ -92,4 +92,12 @@ test('first admin setup closes and the dashboard is responsive', async ({ page }
 	await page.goto('/');
 	await expect(page.getByRole('heading', { name: 'Good to see you' })).toBeVisible();
 	await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 320);
+	await page.goto('/settings/notifications');
+	await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
+	await expect(page.getByLabel('Delivery URL')).toBeVisible();
+	await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 320);
+	await page.goto('/settings/maintenance');
+	await expect(page.getByRole('heading', { name: 'Retention cleanup' })).toBeVisible();
+	await expect(page.getByLabel('Run retention days')).toBeVisible();
+	await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 320);
 });

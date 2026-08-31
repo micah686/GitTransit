@@ -46,6 +46,8 @@ The risk-focused spike suite is documented in [Phase 0](../docs/phase-0.md), the
 
 Phase 1 accepts `GITTRANSIT_BASE_URL`, `GITTRANSIT_DATABASE_URL`, `GITTRANSIT_DATA_DIR`, `GITTRANSIT_ENCRYPTION_KEY_FILE`, `GITTRANSIT_LOG_LEVEL`, and optional `GITTRANSIT_GIT_PATH`. Supply a path-prefixed `GITTRANSIT_BASE_URL` during both build and runtime because SvelteKit compiles the asset base into the build.
 
+Deployment, credentials, internal TLS, backup/restore, upgrades, notifications, and troubleshooting are documented in the [operator guide](../docs/operator-guide.md). Release security evidence and manual checks are defined in [security-review.md](../docs/security-review.md) and [release-checklist.md](../docs/release-checklist.md).
+
 Node 26.7.0 and npm 11.7.0 are the pinned minimum toolchain for this Phase 0 snapshot.
 
 The production image runs as numeric UID/GID `10001` and declares only `/data/db`, `/data/work`, `/data/backups`, and `/data/secrets` writable.

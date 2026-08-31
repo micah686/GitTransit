@@ -27,6 +27,14 @@ export async function checkReadiness(): Promise<ReadinessResult> {
 	} catch {
 		checks.encryptionKey = 'failed';
 	}
+	if (process.env.NODE_EXTRA_CA_CERTS) {
+		try {
+			fs.accessSync(path.resolve(process.env.NODE_EXTRA_CA_CERTS), fs.constants.R_OK);
+			checks.customCa = 'ok';
+		} catch {
+			checks.customCa = 'failed';
+		}
+	}
 	try {
 		for (const directory of [
 			path.dirname(config.databasePath),

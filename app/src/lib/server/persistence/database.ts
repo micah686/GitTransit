@@ -83,6 +83,16 @@ function applyMigrations(database: SqliteDatabase): void {
 		});
 		migrate.immediate();
 	}
+	if (!applied.get(6)) {
+		const sql = fs.readFileSync(path.resolve('migrations/0006_notifications.sql'), 'utf8');
+		const migrate = database.transaction(() => {
+			database.exec(sql);
+			database
+				.prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (6, ?)')
+				.run(Date.now());
+		});
+		migrate.immediate();
+	}
 }
 
 export function openDatabase(filename = config.databasePath): SqliteDatabase {

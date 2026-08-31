@@ -5,6 +5,7 @@ import { phaseThreeHandlers } from '$lib/server/jobs/handlers';
 import { runWorker } from '$lib/server/jobs/worker';
 import { PairRunService } from '$lib/server/application/pair-run-service';
 import { RecoveryService } from '$lib/server/operations/recovery';
+import { NotificationService, runNotificationDispatcher } from '$lib/server/notifications/service';
 
 const shutdown = new AbortController();
 const scheduler = new PairRunService(database());
@@ -19,11 +20,18 @@ process.once('SIGINT', stop);
 process.once('SIGTERM', stop);
 scheduler.enqueueDue(Date.now(), schedulerId);
 
-await runWorker(
-	new JobQueue(database()),
-	phaseThreeHandlers(database()),
-	`worker-${randomUUID()}`,
-	shutdown.signal
-);
+await Promise.all([
+	runWorker(
+		new JobQueue(database()),
+		phaseThreeHandlers(database()),
+		`worker-${randomUUID()}`,
+		shutdown.signal
+	),
+	runNotificationDispatcher(
+		new NotificationService(database()),
+		`notification-${randomUUID()}`,
+		shutdown.signal
+	)
+]);
 clearInterval(schedulerTimer);
 closeDatabase();

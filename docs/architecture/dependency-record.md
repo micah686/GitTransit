@@ -14,6 +14,12 @@ Measured 2026-08-29 with npm 11.7.0 on Linux and Node 26.7.0. Versions are exact
 
 The complete development `node_modules` tree measured 277,304 KiB. That is not the production image budget: Phase 1 CI must measure production-only dependencies and compressed/unpacked image sizes separately.
 
+## Release image budget
+
+Phase 9 sets the final unpacked image ceiling at 400 MiB and enforces it in CI. The largest unavoidable runtime components are Node.js, Git/OpenSSH/CA certificates, `better-sqlite3` (native SQLite), and `@node-rs/argon2` (native password hashing). Provider and notification integrations use platform `fetch`; no vendor SDKs or notification packages were added. CI reports layer history, emits an SPDX SBOM, and requires an explicit documented exception before increasing the ceiling.
+
+The Phase 9 local production build measured 274,736,730 bytes (262 MiB), ran as UID/GID `10001:10001`, and declared only the four documented data volumes. This leaves roughly 138 MiB below the enforced ceiling for registry/runtime variance.
+
 ## Rejected starting choices
 
 - Vendor provider SDKs: platform `fetch` plus narrow REST clients keep provider response types behind adapters.

@@ -39,7 +39,24 @@ export function appendEvent(
 			now,
 			now + EVENT_RETENTION_MS
 		);
-	return Number(result.lastInsertRowid);
+	const cursor = Number(result.lastInsertRowid);
+	db.prepare(
+		`INSERT OR IGNORE INTO notification_deliveries
+	 (id,endpoint_id,user_id,event_cursor,event_type,payload_json,state,next_attempt_at,created_at,updated_at)
+	 SELECT lower(hex(randomblob(16))),id,user_id,?,?,?,'queued',?,?,? FROM notification_endpoints
+	 WHERE user_id=? AND enabled=1 AND EXISTS
+	 (SELECT 1 FROM json_each(event_filters_json) WHERE value=?)`
+	).run(
+		cursor,
+		type,
+		JSON.stringify({ type, resourceIds, payload, createdAt: now }),
+		now,
+		now,
+		now,
+		ownerId,
+		type
+	);
+	return cursor;
 }
 
 export class EventStore {
