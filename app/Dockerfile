@@ -22,7 +22,8 @@ ENV NODE_ENV=production \
     GITTRANSIT_DATABASE_URL=/data/db/gittransit.sqlite \
     GITTRANSIT_ENCRYPTION_KEY_FILE=/data/secrets/credential.key \
     HOST=0.0.0.0 \
-    PORT=3000
+    PORT=3000 \
+    ORIGIN=http://0.0.0.0:3000
 USER 10001:10001
 EXPOSE 3000
 VOLUME ["/data/db", "/data/work", "/data/backups", "/data/secrets"]

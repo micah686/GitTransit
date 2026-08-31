@@ -1045,8 +1045,14 @@ var options = {
 	app_template_contains_nonce: false,
 	async: false,
 	csp: {
-		"mode": "auto",
+		"mode": "hash",
 		"directives": {
+			"default-src": ["self"],
+			"img-src": ["self", "data:"],
+			"style-src": ["self", "unsafe-inline"],
+			"base-uri": ["self"],
+			"form-action": ["self"],
+			"frame-ancestors": ["none"],
 			"upgrade-insecure-requests": false,
 			"block-all-mixed-content": false
 		},
@@ -1071,7 +1077,7 @@ var options = {
 		app: ({ head, body, assets, nonce, env }) => "<!doctype html>\n<html lang=\"en\">\n	<head>\n		<meta charset=\"utf-8\" />\n		<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n		<meta name=\"text-scale\" content=\"scale\" />\n		" + head + "\n	</head>\n	<body data-sveltekit-preload-data=\"hover\">\n		<div style=\"display: contents\">" + body + "</div>\n	</body>\n</html>\n",
 		error: error_template_default
 	},
-	version_hash: "1azt4v3"
+	version_hash: "r7z0op"
 };
 async function get_hooks() {
 	let handle;

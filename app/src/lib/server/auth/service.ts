@@ -24,8 +24,8 @@ function validEmail(email: string): boolean {
 function validateCredentials(email: string, password: string): string {
 	const normalized = normalizeEmail(email);
 	if (!validEmail(normalized)) throw new Error('Enter a valid email address.');
-	if (password.length < 12 || password.length > 1024) {
-		throw new Error('Password must be between 12 and 1024 characters.');
+	if (password.length < 6 || password.length > 1024) {
+		throw new Error('Password must be between 6 and 1024 characters.');
 	}
 	return normalized;
 }

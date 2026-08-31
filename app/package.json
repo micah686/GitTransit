@@ -11,7 +11,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && vite build --config worker.vite.config.ts",
-		"start": "node build",
+		"start": "ORIGIN=${ORIGIN:-http://0.0.0.0:3000} node build",
 		"start:worker": "node worker-build/main.js",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync",

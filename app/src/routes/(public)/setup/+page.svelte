@@ -28,10 +28,10 @@
 				type="password"
 				name="password"
 				autocomplete="new-password"
-				minlength="12"
+				minlength="6"
 				required
 			/>
-			<small>Use at least 12 characters.</small>
+			<small>Use at least 6 characters.</small>
 		</label>
 		<label class="form-field">
 			<span>Confirm password</span>
@@ -40,7 +40,7 @@
 				type="password"
 				name="passwordConfirmation"
 				autocomplete="new-password"
-				minlength="12"
+				minlength="6"
 				required
 			/>
 		</label>

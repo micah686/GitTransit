@@ -21,10 +21,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 	response.headers.set('x-frame-options', 'DENY');
 	response.headers.set('referrer-policy', 'strict-origin-when-cross-origin');
 	response.headers.set('permissions-policy', 'camera=(), microphone=(), geolocation=()');
-	response.headers.set(
-		'content-security-policy',
-		"default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
-	);
 	logger.info(
 		{
 			requestId: event.locals.requestId,
