@@ -55,7 +55,7 @@
 				/></label
 			>
 			<label class="form-field checkbox-field"
-				><input class="checkbox" type="checkbox" name="allowInsecureHttp" /><span
+				><input class="checkbox checkbox-warning" type="checkbox" name="allowInsecureHttp" /><span
 					>Explicitly allow a private-network or insecure HTTP endpoint</span
 				></label
 			>
@@ -63,17 +63,35 @@
 		<fieldset class="form-stack">
 			<legend>Events</legend>
 			<label class="checkbox-field"
-				><input class="checkbox" type="checkbox" name="event" value="run.failed" checked /> Run failed</label
-			>
-			<label class="checkbox-field"
-				><input class="checkbox" type="checkbox" name="event" value="run.partial" checked /> Partial write</label
-			>
-			<label class="checkbox-field"
-				><input class="checkbox" type="checkbox" name="event" value="run.conflicted" checked /> Conflict</label
+				><input
+					class="checkbox checkbox-primary"
+					type="checkbox"
+					name="event"
+					value="run.failed"
+					checked
+				/> Run failed</label
 			>
 			<label class="checkbox-field"
 				><input
-					class="checkbox"
+					class="checkbox checkbox-primary"
+					type="checkbox"
+					name="event"
+					value="run.partial"
+					checked
+				/> Partial write</label
+			>
+			<label class="checkbox-field"
+				><input
+					class="checkbox checkbox-primary"
+					type="checkbox"
+					name="event"
+					value="run.conflicted"
+					checked
+				/> Conflict</label
+			>
+			<label class="checkbox-field"
+				><input
+					class="checkbox checkbox-primary"
 					type="checkbox"
 					name="event"
 					value="run.awaiting-approval"
@@ -81,7 +99,12 @@
 				/> Approval required</label
 			>
 			<label class="checkbox-field"
-				><input class="checkbox" type="checkbox" name="event" value="run.succeeded" /> Run succeeded</label
+				><input
+					class="checkbox checkbox-primary"
+					type="checkbox"
+					name="event"
+					value="run.succeeded"
+				/> Run succeeded</label
 			>
 		</fieldset>
 		<button class="btn btn-primary" type="submit">Add notification endpoint</button>

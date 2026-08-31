@@ -10,10 +10,10 @@
 	</div>
 	<a class="btn btn-primary" href={resolve('/pairs/new')}>Create mirror pair</a>
 </div>
-<section class="welcome-panel">
+<section class="welcome-panel alert alert-info shadow-none" aria-labelledby="clear-map-title">
 	<div class="welcome-icon" aria-hidden="true">⇄</div>
 	<div>
-		<h2>Your transit map is clear</h2>
+		<h2 id="clear-map-title">Your transit map is clear</h2>
 		<p>Connect your Git services, then map repositories into safe one-way or two-way flows.</p>
 	</div>
 </section>
@@ -22,30 +22,30 @@
 		<h2 id="overview-title">Overview</h2>
 		<span>{data.counts.activeRuns} active jobs</span>
 	</div>
-	<div class="stat-grid">
-		<article class="stat-card">
+	<div class="stat-grid stats stats-vertical bg-base-100 shadow-none sm:stats-horizontal">
+		<div class="stat-card stat">
 			<span>Connections</span><strong>{data.counts.connections}</strong><small
 				>Configured services</small
 			>
-		</article>
-		<article class="stat-card">
+		</div>
+		<div class="stat-card stat">
 			<span>Mirror pairs</span><strong>{data.counts.pairs}</strong><small>Configured flows</small>
-		</article>
-		<article class="stat-card">
+		</div>
+		<div class="stat-card stat">
 			<span>Repository routes</span><strong>{data.counts.routes}</strong><small
 				>Mapped repositories</small
 			>
-		</article>
-		<article class="stat-card">
+		</div>
+		<div class="stat-card stat">
 			<span>Open conflicts</span><strong>{data.counts.conflicts}</strong><small
 				>Needs attention</small
 			>
-		</article>
-		<article class="stat-card">
+		</div>
+		<div class="stat-card stat">
 			<span>Pending approvals</span><strong>{data.counts.approvals}</strong><small
 				>Destructive plans awaiting review</small
 			>
-		</article>
+		</div>
 	</div>
 </section>
 <section class="next-step" aria-labelledby="next-title">

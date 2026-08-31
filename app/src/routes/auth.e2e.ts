@@ -10,6 +10,14 @@ test('first admin setup closes and the dashboard is responsive', async ({ page }
 	await page.getByLabel('Confirm password').fill('correct horse battery staple');
 	await page.getByRole('button', { name: 'Create administrator' }).click();
 	await expect(page.getByRole('heading', { name: 'Good to see you' })).toBeVisible();
+	const themeController = page.getByLabel('Theme');
+	await expect(themeController).toHaveValue('dark');
+	await themeController.selectOption('light');
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+	await themeController.selectOption('dark');
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+	await expect(page.locator('.welcome-panel')).toHaveClass(/alert-info/);
+	await expect(page.locator('input[type="checkbox"]')).toHaveCount(0);
 	await page.getByRole('link', { name: 'Connections' }).click();
 	await page.getByRole('link', { name: 'Add connection' }).click();
 	const provider = page.getByLabel('Provider adapter');

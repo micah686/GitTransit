@@ -35,7 +35,7 @@
 	<section class="route-list">
 		{#each data.routes as route (route.routeId)}<article>
 				<input
-					class="checkbox"
+					class="checkbox checkbox-primary"
 					type="checkbox"
 					name="routeId"
 					value={route.routeId}

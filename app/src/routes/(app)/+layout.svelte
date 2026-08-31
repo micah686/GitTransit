@@ -4,19 +4,18 @@
 	import { connectEventStream } from '$lib/client/event-stream';
 	let { children, data } = $props();
 	let menuOpen = $state(false);
-	let theme = $state<'system' | 'light' | 'dark'>('system');
+	let theme = $state<'light' | 'dark'>('dark');
 	let timeFormat = $state<'12' | '24'>('12');
 
-	function applyTheme(value: 'system' | 'light' | 'dark'): void {
+	function applyTheme(value: 'light' | 'dark'): void {
 		theme = value;
-		if (value === 'system') document.documentElement.removeAttribute('data-theme');
-		else document.documentElement.dataset.theme = value;
+		document.documentElement.dataset.theme = value;
 		localStorage.setItem('gittransit-theme', value);
 	}
 
 	onMount(() => {
 		const savedTheme = localStorage.getItem('gittransit-theme');
-		if (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system') {
+		if (savedTheme === 'light' || savedTheme === 'dark') {
 			applyTheme(savedTheme);
 		}
 		const savedTime = localStorage.getItem('gittransit-time-format');
@@ -28,7 +27,7 @@
 <div class="app-shell">
 	<header class="mobile-header">
 		<button
-			class="icon-button"
+			class="btn btn-square btn-ghost btn-sm"
 			type="button"
 			aria-label="Open navigation"
 			onclick={() => (menuOpen = true)}
@@ -41,17 +40,21 @@
 	{#if menuOpen}
 		<button class="scrim" aria-label="Close navigation" onclick={() => (menuOpen = false)}></button>
 	{/if}
-	<aside class:open={menuOpen} class="sidebar" aria-label="Primary navigation">
+	<aside
+		class:open={menuOpen}
+		class="sidebar bg-neutral text-neutral-content"
+		aria-label="Primary navigation"
+	>
 		<div class="sidebar-top">
 			<a class="brand" href={resolve('/')}><span class="brand-mark">⇄</span> GitTransit</a>
 			<button
-				class="icon-button close-menu"
+				class="close-menu btn btn-square btn-ghost btn-sm"
 				type="button"
 				aria-label="Close navigation"
 				onclick={() => (menuOpen = false)}>×</button
 			>
 		</div>
-		<nav>
+		<nav class="menu menu-sm">
 			<a href={resolve('/')} onclick={() => (menuOpen = false)}
 				><span aria-hidden="true">⌂</span>Dashboard</a
 			>
@@ -85,8 +88,11 @@
 			<div class="preference-grid">
 				<label
 					>Theme
-					<select class="select select-sm" bind:value={theme} onchange={() => applyTheme(theme)}>
-						<option value="system">System</option>
+					<select
+						class="select select-sm select-neutral"
+						bind:value={theme}
+						onchange={() => applyTheme(theme)}
+					>
 						<option value="light">Light</option>
 						<option value="dark">Dark</option>
 					</select>
@@ -94,7 +100,7 @@
 				<label
 					>Time
 					<select
-						class="select select-sm"
+						class="select select-sm select-neutral"
 						bind:value={timeFormat}
 						onchange={() => localStorage.setItem('gittransit-time-format', timeFormat)}
 					>

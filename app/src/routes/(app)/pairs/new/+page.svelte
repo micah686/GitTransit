@@ -165,9 +165,12 @@
 				></label
 			>
 			<label class="form-field checkbox-field"
-				><input type="checkbox" class="checkbox" name="metadataAuthority" value="A" /><span
-					>Side A is metadata authority (required for two-way Git)</span
-				></label
+				><input
+					type="checkbox"
+					class="checkbox checkbox-primary"
+					name="metadataAuthority"
+					value="A"
+				/><span>Side A is metadata authority (required for two-way Git)</span></label
 			>
 		</div>
 		<div class="wizard-step">
@@ -196,11 +199,14 @@
 					></select
 				></label
 			><label class="form-field checkbox-field"
-				><input type="checkbox" class="checkbox" name="autoProvision" checked /><span
-					>Provision new selected targets</span
-				></label
+				><input
+					type="checkbox"
+					class="checkbox checkbox-primary"
+					name="autoProvision"
+					checked
+				/><span>Provision new selected targets</span></label
 			><label class="form-field checkbox-field"
-				><input type="checkbox" class="checkbox" name="scheduleEnabled" /><span
+				><input type="checkbox" class="checkbox checkbox-primary" name="scheduleEnabled" /><span
 					>Run on schedule</span
 				></label
 			><label class="form-field"
